@@ -253,18 +253,35 @@ function RepresentationInfo({ reprFormat, buildGraph }) {
           'Cada vértice armazena sua lista de vizinhos. Espaço O(V+E). Eficiente para grafos esparsos.';
         break;
       }
+      case 'coordinates': {
+        const { An, Ai, Aj, Nz } = g.getCoordinateFormat();
+        text = `An = [${An.join(', ')}]\nAi = [${Ai.join(', ')}]\nAj = [${Aj.join(', ')}]`;
+        desc = `Formato por coordenadas (COO). Armazena os Nz=${Nz} coeficientes não nulos em An, com seus índices de linha (Ai) e coluna (Aj). Custo: 3·Nz = ${3 * Nz}. A disposição dos coeficientes em An pode ser qualquer, bastando ajustar Ai e Aj de acordo.`;
+        break;
+      }
       case 'csr': {
-        const { rowPtr, colInd, values, nodeIds } = g.getCSR();
-        text = `Vértices:  [${nodeIds.join(', ')}]\nrow_ptr:   [${rowPtr.join(', ')}]\ncol_ind:   [${colInd.join(', ')}]\nvalues:    [${values.join(', ')}]`;
-        desc =
-          'Compressed Sparse Row — representação compacta. row_ptr[i] indica onde começam os vizinhos do vértice i em col_ind/values. Espaço O(V+E), cache-friendly.';
+        const { An, Ac, Al, Nz, n } = g.getCSR();
+        text = `An = [${An.join(', ')}]\nAc = [${Ac.join(', ')}]\nAl = [${Al.join(', ')}]`;
+        desc = `Compressed Sparse Row (CSR). Coeficientes não nulos dispostos linha a linha em An. Ac contém os índices das colunas. Al[i] indica o início da linha i em Ac, e Al[n+1] = Al[1] + Nz. |An| = |Ac| = Nz = ${Nz}, |Al| = n+1 = ${n + 1}. Custo: 2·Nz + n+1 = ${2 * Nz + n + 1}.`;
+        break;
+      }
+      case 'skyline': {
+        const { An, Ai, n, profile } = g.getSkyline();
+        text = `An = [${An.join(', ')}]\nAi = [${Ai.join(', ')}]`;
+        desc = `Formato Skyline (SSS). Para matrizes simétricas: armazena a diagonal principal e o envelope. O vetor An contém os elementos do envelope linha a linha (do primeiro não-nulo até a diagonal). Ai[i] aponta para a posição da diagonal da i-ésima linha em An. |An| = profile + n = ${An.length}, profile = ${profile}. Vantagem: fill-in recai somente no envelope durante decomposições como Cholesky.`;
+        break;
+      }
+      case 'csrsss': {
+        const { Ad, An, Ac, Al, n, numEdges } = g.getCSRSSS();
+        text = `Ad = [${Ad.join(', ')}]\nAn = [${An.join(', ')}]\nAc = [${Ac.join(', ')}]\nAl = [${Al.join(', ')}]`;
+        desc = `CSR-SSS: para matrizes simétricas, armazena a diagonal (Ad) separadamente e os coeficientes não nulos da triangular inferior linha a linha (An), com colunas (Ac) e ponteiros de linha (Al). |Ad| = n = ${n}, |An| = |Ac| = |A| = ${numEdges}, |Al| = n+1 = ${n + 1}. Custo: 2|A|+2|V|+1 = ${2 * numEdges + 2 * n + 1}. Comparação: listas de adjacências custam 2|A|+|V|+1.`;
         break;
       }
       case 'edgeList': {
         const el = g.getEdgeList();
         text = el.map((e) => `(${e.source}, ${e.target}, peso=${e.weight})`).join('\n');
         desc =
-          'Lista de todas as arestas. Espaço O(E). Usada pelo algoritmo de Kruskal (após ordenação).';
+          'Lista de todas as arestas. Espaço O(E). Usada pelo algoritmo de Kruskal (após ordenação por peso).';
         break;
       }
     }

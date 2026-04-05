@@ -122,21 +122,81 @@ export class Graph {
 
   getCSR() {
     const nodeIds = Array.from(this.nodes.keys()).sort((a, b) => a - b);
+    const n = nodeIds.length;
     const indexMap = new Map(nodeIds.map((id, i) => [id, i]));
-    const rowPtr = [0];
-    const colInd = [];
-    const values = [];
+    const Al = [1];
+    const Ac = [];
+    const An = [];
     for (const nodeId of nodeIds) {
       const neighbors = this.getNeighbors(nodeId).sort(
         (a, b) => indexMap.get(a.nodeId) - indexMap.get(b.nodeId)
       );
       for (const { nodeId: neighbor, weight } of neighbors) {
-        colInd.push(indexMap.get(neighbor));
-        values.push(weight);
+        Ac.push(indexMap.get(neighbor) + 1);
+        An.push(weight);
       }
-      rowPtr.push(colInd.length);
+      Al.push(Ac.length + 1);
     }
-    return { rowPtr, colInd, values, nodeIds };
+    const Nz = An.length;
+    return { An, Ac, Al, nodeIds, n, Nz };
+  }
+
+  getCoordinateFormat() {
+    const { matrix, nodeIds } = this.getAdjacencyMatrix();
+    const n = nodeIds.length;
+    const An = [];
+    const Ai = [];
+    const Aj = [];
+    for (let j = 0; j < n; j++) {
+      for (let i = 0; i < n; i++) {
+        if (matrix[i][j] !== 0) {
+          An.push(matrix[i][j]);
+          Ai.push(i + 1);
+          Aj.push(j + 1);
+        }
+      }
+    }
+    const Nz = An.length;
+    return { An, Ai, Aj, nodeIds, n, Nz };
+  }
+
+  getSkyline() {
+    const { matrix, nodeIds } = this.getAdjacencyMatrix();
+    const n = nodeIds.length;
+    const An = [];
+    const AiDiag = [];
+    for (let i = 0; i < n; i++) {
+      let firstNz = i;
+      for (let j = 0; j < i; j++) {
+        if (matrix[i][j] !== 0) { firstNz = j; break; }
+      }
+      for (let j = firstNz; j <= i; j++) {
+        An.push(matrix[i][j]);
+      }
+      AiDiag.push(An.length);
+    }
+    return { An, Ai: AiDiag, nodeIds, n, profile: An.length - n };
+  }
+
+  getCSRSSS() {
+    const { matrix, nodeIds } = this.getAdjacencyMatrix();
+    const n = nodeIds.length;
+    const Ad = [];
+    const An = [];
+    const Ac = [];
+    const Al = [0];
+    for (let i = 0; i < n; i++) {
+      Ad.push(matrix[i][i]);
+      for (let j = 0; j < i; j++) {
+        if (matrix[i][j] !== 0) {
+          An.push(matrix[i][j]);
+          Ac.push(j + 1);
+        }
+      }
+      Al.push(An.length);
+    }
+    const numEdges = An.length;
+    return { Ad, An, Ac, Al, nodeIds, n, numEdges };
   }
 
   getEdgeList() {

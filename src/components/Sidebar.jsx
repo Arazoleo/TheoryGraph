@@ -26,7 +26,10 @@ const algorithms = [
 const reprFormats = [
   { id: 'adjMatrix', label: 'Matriz de Adjacência' },
   { id: 'adjList', label: 'Lista de Adjacência' },
+  { id: 'coordinates', label: 'Coordenadas (COO)' },
   { id: 'csr', label: 'CSR' },
+  { id: 'skyline', label: 'Skyline (SSS)' },
+  { id: 'csrsss', label: 'CSR-SSS' },
   { id: 'edgeList', label: 'Lista de Arestas' },
 ];
 

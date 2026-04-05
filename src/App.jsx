@@ -435,22 +435,70 @@ function ReprCanvas({ buildGraph, reprFormat }) {
         }
         return lines.join('\n');
       }
-      case 'csr': {
-        const { rowPtr, colInd, values, nodeIds } = g.getCSR();
+      case 'coordinates': {
+        const { An, Ai, Aj, n, Nz } = g.getCoordinateFormat();
         return [
-          `Vértices:   [ ${nodeIds.join(', ')} ]`,
+          `n = ${n},  Nz = ${Nz},  custo = 3·Nz = ${3 * Nz}`,
           '',
-          `row_ptr:    [ ${rowPtr.join(', ')} ]`,
-          `col_ind:    [ ${colInd.join(', ')} ]`,
-          `values:     [ ${values.join(', ')} ]`,
+          `An = [${An.join(', ')}]`,
+          `Ai = [${Ai.join(', ')}]`,
+          `Aj = [${Aj.join(', ')}]`,
+        ].join('\n');
+      }
+      case 'csr': {
+        const { An, Ac, Al, nodeIds, n, Nz } = g.getCSR();
+        return [
+          `n = ${n},  Nz = ${Nz},  custo = 2·Nz + n+1 = ${2 * Nz + n + 1}`,
           '',
-          '─── Leitura ───',
+          `An = [${An.join(', ')}]`,
+          `Ac = [${Ac.join(', ')}]`,
+          `Al = [${Al.join(', ')}]`,
+          '',
+          '─── Leitura por linha ───',
           ...nodeIds.map((id, i) => {
-            const start = rowPtr[i];
-            const end = rowPtr[i + 1];
-            const cols = colInd.slice(start, end).join(', ');
-            const vals = values.slice(start, end).join(', ');
-            return `  Vértice ${id}: col_ind[${start}..${end - 1}] = [${cols}], values = [${vals}]`;
+            const start = Al[i] - 1;
+            const end = Al[i + 1] - 1;
+            const cols = Ac.slice(start, end).join(', ');
+            const vals = An.slice(start, end).join(', ');
+            return `  Linha ${i + 1} (v${id}): Al[${i + 1}]=${Al[i]}  →  Ac = [${cols}],  An = [${vals}]`;
+          }),
+        ].join('\n');
+      }
+      case 'skyline': {
+        const { An, Ai, n, profile } = g.getSkyline();
+        return [
+          `n = ${n},  profile = ${profile},  |An| = ${An.length}`,
+          '',
+          `An = [${An.join(', ')}]`,
+          `Ai = [${Ai.join(', ')}]`,
+          '',
+          '─── Leitura por linha ───',
+          ...Ai.map((diagPos, i) => {
+            const prevDiag = i === 0 ? 0 : Ai[i - 1];
+            const elems = An.slice(prevDiag, diagPos);
+            return `  Linha ${i + 1}: An[${prevDiag + 1}..${diagPos}] = [${elems.join(', ')}]  (diagonal na posição ${diagPos})`;
+          }),
+        ].join('\n');
+      }
+      case 'csrsss': {
+        const { Ad, An, Ac, Al, n, numEdges } = g.getCSRSSS();
+        const cost = 2 * numEdges + 2 * n + 1;
+        return [
+          `n = ${n},  |A| = ${numEdges},  custo = 2|A|+2|V|+1 = ${cost}`,
+          '',
+          `Ad = [${Ad.join(', ')}]`,
+          `An = [${An.length > 0 ? An.join(', ') : ''}]`,
+          `Ac = [${Ac.length > 0 ? Ac.join(', ') : ''}]`,
+          `Al = [${Al.join(', ')}]`,
+          '',
+          '─── Leitura por linha ───',
+          ...Ad.map((d, i) => {
+            const start = Al[i];
+            const end = Al[i + 1];
+            const cols = Ac.slice(start, end);
+            const vals = An.slice(start, end);
+            const lower = vals.length > 0 ? `tri. inf. = [${vals.join(', ')}] (col. ${cols.join(', ')})` : 'sem elem. tri. inf.';
+            return `  Linha ${i + 1}: diag = ${d},  ${lower}`;
           }),
         ].join('\n');
       }
