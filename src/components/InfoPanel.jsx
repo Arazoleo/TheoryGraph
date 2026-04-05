@@ -1,0 +1,299 @@
+import { useMemo } from 'react';
+import { PSEUDOCODE, COMPLEXITY } from '../lib/algorithms';
+
+export default function InfoPanel({
+  activeTab,
+  nodes,
+  edges,
+  algorithm,
+  currentStepData,
+  stepIndex,
+  totalSteps,
+  reprFormat,
+  buildGraph,
+  uf,
+  ufHistory,
+}) {
+  return (
+    <aside className="w-72 bg-slate-900/40 border-l border-white/5 flex flex-col overflow-y-auto shrink-0">
+      <div className="p-4 flex flex-col gap-5">
+        {activeTab === 'editor' && (
+          <EditorInfo nodes={nodes} edges={edges} buildGraph={buildGraph} />
+        )}
+        {activeTab === 'algorithms' && (
+          <AlgorithmInfo
+            algorithm={algorithm}
+            stepData={currentStepData}
+            stepIndex={stepIndex}
+            totalSteps={totalSteps}
+          />
+        )}
+        {activeTab === 'unionfind' && (
+          <UnionFindInfo uf={uf} ufHistory={ufHistory} />
+        )}
+        {activeTab === 'representations' && (
+          <RepresentationInfo reprFormat={reprFormat} buildGraph={buildGraph} />
+        )}
+      </div>
+    </aside>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <div>
+      <h3 className="text-[0.65rem] font-semibold uppercase tracking-widest text-slate-500 mb-2">
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+function EditorInfo({ nodes, edges, buildGraph }) {
+  const stats = useMemo(() => {
+    if (nodes.length === 0) return { nodes: 0, edges: 0, components: 0, maxDeg: 0 };
+    const g = buildGraph();
+    return {
+      nodes: nodes.length,
+      edges: edges.length,
+      components: g.getComponents().length,
+      maxDeg: g.getMaxDegree(),
+    };
+  }, [nodes, edges, buildGraph]);
+
+  return (
+    <>
+      <Section title="Propriedades do Grafo">
+        <div className="grid grid-cols-2 gap-2">
+          <StatBox label="Vértices" value={stats.nodes} color="text-cyan-400" />
+          <StatBox label="Arestas" value={stats.edges} color="text-violet-400" />
+          <StatBox label="Componentes" value={stats.components} color="text-emerald-400" />
+          <StatBox label="Grau Máx" value={stats.maxDeg} color="text-amber-400" />
+        </div>
+      </Section>
+
+      <Section title="Como usar">
+        <div className="text-xs text-slate-400 leading-relaxed space-y-2">
+          <p><strong className="text-slate-300">Selecionar:</strong> clique e arraste vértices para mover.</p>
+          <p><strong className="text-slate-300">Vértice +:</strong> clique no canvas para adicionar.</p>
+          <p><strong className="text-slate-300">Aresta +:</strong> clique em dois vértices para conectá-los.</p>
+          <p><strong className="text-slate-300">Deletar:</strong> clique em vértices ou arestas para remover.</p>
+        </div>
+      </Section>
+    </>
+  );
+}
+
+function AlgorithmInfo({ algorithm, stepData, stepIndex, totalSteps }) {
+  const pseudocode = PSEUDOCODE[algorithm] || [];
+  const complexity = COMPLEXITY[algorithm] || {};
+  const pseudoLine = stepData?.pseudocodeLine ?? -1;
+
+  return (
+    <>
+      <Section title="Passo Atual">
+        <div className="info-card animate-fade-in" key={stepIndex}>
+          {stepData ? (
+            <p className="text-sm text-slate-200 leading-relaxed">{stepData.description}</p>
+          ) : (
+            <p className="text-sm text-slate-500">Clique em "Iniciar" para executar o algoritmo.</p>
+          )}
+        </div>
+      </Section>
+
+      {stepData && (
+        <Section title="AGM (Árvore Geradora Mínima)">
+          <div className="flex gap-3">
+            <StatBox
+              label="Arestas"
+              value={stepData.mstEdges?.size ?? 0}
+              color="text-emerald-400"
+            />
+            <StatBox
+              label="Peso Total"
+              value={stepData.totalWeight ?? 0}
+              color="text-cyan-400"
+            />
+          </div>
+        </Section>
+      )}
+
+      <Section title={`Algoritmo 7.${algorithm === 'prim' ? '1' : algorithm === 'kruskal' ? '2' : '3'}`}>
+        <div className="info-card p-2">
+          {pseudocode.map((line, i) => (
+            <div key={i} className={`pseudo-line ${i === pseudoLine ? 'active' : ''}`}>
+              {line}
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Complexidade">
+        <div className="info-card text-xs leading-relaxed">
+          <div className="flex flex-col gap-1 mb-2">
+            <span className="text-slate-400">
+              Tempo: <span className="text-cyan-400 font-mono font-semibold">{complexity.time}</span>
+            </span>
+            <span className="text-slate-400">
+              Espaço: <span className="text-violet-400 font-mono font-semibold">{complexity.space}</span>
+            </span>
+          </div>
+          {complexity.detail && <p className="text-slate-500">{complexity.detail}</p>}
+        </div>
+      </Section>
+
+      {complexity.ufAnalysis && (
+        <Section title="Conjuntos Disjuntos no Kruskal">
+          <div className="space-y-2.5">
+            {complexity.ufAnalysis.map((item, i) => (
+              <div key={i} className="info-card text-xs leading-relaxed">
+                <p className={`font-semibold mb-1 ${item.color}`}>{item.title}</p>
+                <p className="text-slate-500 font-mono text-[0.65rem]">{item.ops}</p>
+                <p className={`font-mono font-semibold mt-1 ${item.color}`}>{item.total}</p>
+              </div>
+            ))}
+            <div className="info-card text-xs leading-relaxed">
+              <p className="text-slate-400 mb-1">
+                <strong className="text-violet-400">α(n)</strong> = inversa da função de Ackermann
+              </p>
+              <p className="text-slate-500">
+                Cresce tão lentamente que α(n) ≤ 4 para todo n prático
+                (n &lt; 10⁸⁰). A combinação de <em>rank</em> + <em>compressão de caminho</em> torna
+                o Union-Find quase linear — O(m·α(n)) é dito <strong className="text-emerald-400">superlinear</strong>.
+              </p>
+            </div>
+          </div>
+        </Section>
+      )}
+    </>
+  );
+}
+
+function UnionFindInfo({ uf, ufHistory }) {
+  const numComponents = uf ? uf.getComponents().size : 0;
+  const numElements = uf ? uf.parent.size : 0;
+
+  return (
+    <>
+      <Section title="Estado">
+        <div className="flex gap-3">
+          <StatBox label="Elementos" value={numElements} color="text-violet-400" />
+          <StatBox label="Conjuntos" value={numComponents} color="text-cyan-400" />
+        </div>
+      </Section>
+
+      <Section title="Complexidade">
+        <div className="info-card text-xs leading-relaxed space-y-2">
+          <p className="text-slate-400">
+            Com <span className="text-violet-400">compressão de caminho</span> e{' '}
+            <span className="text-violet-400">união por rank</span>:
+          </p>
+          <p className="text-slate-300 font-mono">
+            Find/Union: O(α(n)) amortizado
+          </p>
+          <p className="text-slate-500">
+            α(n) é a <strong>inversa da função de Ackermann</strong>. Cresce tão lentamente
+            que α(n) ≤ 4 para todos os valores práticos (n &lt; 10⁸⁰). Na prática, é
+            considerada constante.
+          </p>
+          <p className="text-slate-500">
+            Sem heurísticas: O(n) no pior caso por operação. A combinação das duas
+            heurísticas é crucial para a eficiência do algoritmo de Kruskal.
+          </p>
+        </div>
+      </Section>
+
+      {ufHistory && ufHistory.length > 0 && (
+        <Section title="Histórico">
+          <div className="info-card max-h-48 overflow-y-auto">
+            {ufHistory.map((entry, i) => (
+              <div key={i} className="text-xs text-slate-400 py-1 border-b border-white/5 last:border-0">
+                <span className="text-violet-400 font-mono mr-1">{entry.op}</span>
+                {entry.detail}
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+    </>
+  );
+}
+
+function RepresentationInfo({ reprFormat, buildGraph }) {
+  const content = useMemo(() => {
+    const g = buildGraph();
+    if (g.nodes.size === 0) return { text: 'Crie um grafo na aba Editor.', desc: '' };
+
+    let text = '';
+    let desc = '';
+
+    switch (reprFormat) {
+      case 'adjMatrix': {
+        const { matrix, nodeIds } = g.getAdjacencyMatrix();
+        const header = '     ' + nodeIds.map((id) => String(id).padStart(4)).join('');
+        const rows = matrix.map(
+          (row, i) =>
+            String(nodeIds[i]).padStart(4) + ' ' + row.map((v) => String(v).padStart(4)).join('')
+        );
+        text = header + '\n' + rows.join('\n');
+        desc =
+          'Matriz V×V onde M[i][j] contém o peso da aresta entre i e j (0 = sem aresta). Acesso O(1), mas espaço O(V²).';
+        break;
+      }
+      case 'adjList': {
+        const list = g.getAdjacencyList();
+        const lines = [];
+        for (const [nodeId, neighbors] of list) {
+          const nbs = neighbors.map((n) => `${n.nodeId}(${n.weight})`).join(', ');
+          lines.push(`${nodeId} → [${nbs}]`);
+        }
+        text = lines.join('\n');
+        desc =
+          'Cada vértice armazena sua lista de vizinhos. Espaço O(V+E). Eficiente para grafos esparsos.';
+        break;
+      }
+      case 'csr': {
+        const { rowPtr, colInd, values, nodeIds } = g.getCSR();
+        text = `Vértices:  [${nodeIds.join(', ')}]\nrow_ptr:   [${rowPtr.join(', ')}]\ncol_ind:   [${colInd.join(', ')}]\nvalues:    [${values.join(', ')}]`;
+        desc =
+          'Compressed Sparse Row — representação compacta. row_ptr[i] indica onde começam os vizinhos do vértice i em col_ind/values. Espaço O(V+E), cache-friendly.';
+        break;
+      }
+      case 'edgeList': {
+        const el = g.getEdgeList();
+        text = el.map((e) => `(${e.source}, ${e.target}, peso=${e.weight})`).join('\n');
+        desc =
+          'Lista de todas as arestas. Espaço O(E). Usada pelo algoritmo de Kruskal (após ordenação).';
+        break;
+      }
+    }
+
+    return { text, desc };
+  }, [reprFormat, buildGraph]);
+
+  return (
+    <>
+      <Section title="Sobre o Formato">
+        <div className="info-card text-xs text-slate-400 leading-relaxed">
+          {content.desc || 'Selecione um formato no painel esquerdo.'}
+        </div>
+      </Section>
+
+      <Section title="Representação">
+        <pre className="info-card text-xs font-mono text-slate-300 whitespace-pre overflow-x-auto max-h-96">
+          {content.text || '—'}
+        </pre>
+      </Section>
+    </>
+  );
+}
+
+function StatBox({ label, value, color = 'text-white' }) {
+  return (
+    <div className="stat-box flex-1">
+      <span className={`text-lg font-bold font-mono ${color}`}>{value}</span>
+      <span className="text-[0.6rem] text-slate-500 mt-0.5">{label}</span>
+    </div>
+  );
+}
