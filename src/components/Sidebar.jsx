@@ -21,6 +21,8 @@ const algorithms = [
   { id: 'prim', label: 'Prim' },
   { id: 'kruskal', label: 'Kruskal' },
   { id: 'boruvka', label: 'Borůvka' },
+  { id: 'dfs', label: 'Busca Profundidade (DFS)' },
+  { id: 'bfs', label: 'Busca Largura (BFS)' },
 ];
 
 const reprFormats = [
@@ -139,7 +141,7 @@ export default function Sidebar({
               </div>
             </Section>
 
-            {algorithm === 'prim' && (
+            {(algorithm === 'prim' || algorithm === 'dfs' || algorithm === 'bfs') && (
               <Section title="Vértice Inicial">
                 <select
                   value={startNode ?? ''}

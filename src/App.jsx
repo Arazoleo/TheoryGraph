@@ -12,6 +12,8 @@ import {
   generatePrimSteps,
   generateKruskalSteps,
   generateBoruvkaSteps,
+  generateDfsSteps,
+  generateBfsSteps,
 } from './lib/algorithms';
 
 export default function App() {
@@ -157,6 +159,12 @@ export default function App() {
         break;
       case 'boruvka':
         steps = generateBoruvkaSteps(g);
+        break;
+      case 'dfs':
+        steps = generateDfsSteps(g, sn);
+        break;
+      case 'bfs':
+        steps = generateBfsSteps(g, sn);
         break;
       default:
         return;

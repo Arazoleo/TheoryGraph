@@ -9,6 +9,7 @@ export default function AuxStructures({ algorithm, stepData }) {
         {algorithm === 'prim' && <PrimHeap stepData={stepData} />}
         {algorithm === 'kruskal' && <KruskalEdges stepData={stepData} />}
         {algorithm === 'boruvka' && <BoruvkaComponents stepData={stepData} />}
+        {(algorithm === 'dfs' || algorithm === 'bfs') && <SearchFrontier stepData={stepData} />}
       </div>
     </div>
   );
@@ -217,6 +218,62 @@ function BoruvkaComponents({ stepData }) {
           </p>
         )
       )}
+    </div>
+  );
+}
+
+function SearchFrontier({ stepData }) {
+  const { frontierType, frontierContents = [], frontierPopped } = stepData;
+  const isStack = frontierType === 'stack';
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-[0.6rem] font-semibold uppercase tracking-widest text-slate-500">
+          {isStack ? 'Pilha' : 'Fila'} de fronteira
+        </span>
+        <span className="text-[0.6rem] text-slate-600 font-mono">
+          — tamanho = {frontierContents.length}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-1.5 min-h-[3.5rem] flex-wrap">
+        {frontierPopped !== null && (
+          <div className="flex items-center gap-1.5 mr-1">
+            <div className="flex flex-col items-center px-2.5 py-1.5 rounded-lg border bg-emerald-500/10 border-emerald-500/30 text-emerald-400 text-xs font-mono animate-fade-in">
+              <span className="text-[0.55rem] text-emerald-500 mb-0.5">
+                {isStack ? 'Desempilha' : 'Desenfileira'}
+              </span>
+              <span className="font-bold text-sm">v{frontierPopped}</span>
+            </div>
+            {frontierContents.length > 0 && (
+              <ArrowDown size={12} className="text-slate-600 rotate-[-90deg]" />
+            )}
+          </div>
+        )}
+
+        {frontierContents.length > 0 ? (
+          frontierContents.map((nodeId, i) => (
+            <div
+              key={`frontier-${nodeId}-${i}`}
+              className="flex flex-col items-center px-2.5 py-1.5 rounded-lg border text-xs font-mono bg-cyan-500/10 border-cyan-500/30 text-cyan-300"
+            >
+              <span className="font-bold text-sm">v{nodeId}</span>
+              {((isStack && i === frontierContents.length - 1) || (!isStack && i === 0)) && (
+                <span className="text-[0.5rem] text-cyan-500 mt-0.5">
+                  {isStack ? 'topo' : 'frente'}
+                </span>
+              )}
+            </div>
+          ))
+        ) : (
+          frontierPopped === null && (
+            <span className="text-xs text-slate-600 italic">
+              {isStack ? 'Pilha vazia' : 'Fila vazia'}
+            </span>
+          )
+        )}
+      </div>
     </div>
   );
 }

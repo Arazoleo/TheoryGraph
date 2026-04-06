@@ -89,6 +89,17 @@ function AlgorithmInfo({ algorithm, stepData, stepIndex, totalSteps }) {
   const pseudocode = PSEUDOCODE[algorithm] || [];
   const complexity = COMPLEXITY[algorithm] || {};
   const pseudoLine = stepData?.pseudocodeLine ?? -1;
+  const isSearch = algorithm === 'dfs' || algorithm === 'bfs';
+  const algoChapter =
+    algorithm === 'prim'
+      ? '1'
+      : algorithm === 'kruskal'
+      ? '2'
+      : algorithm === 'boruvka'
+      ? '3'
+      : algorithm === 'dfs'
+      ? '4'
+      : '5';
 
   return (
     <>
@@ -103,23 +114,23 @@ function AlgorithmInfo({ algorithm, stepData, stepIndex, totalSteps }) {
       </Section>
 
       {stepData && (
-        <Section title="AGM (Árvore Geradora Mínima)">
+        <Section title={isSearch ? 'Busca' : 'AGM (Árvore Geradora Mínima)'}>
           <div className="flex gap-3">
             <StatBox
-              label="Arestas"
-              value={stepData.mstEdges?.size ?? 0}
+              label={isSearch ? 'Visitados' : 'Arestas'}
+              value={stepData.mstNodes?.size ?? 0}
               color="text-emerald-400"
             />
             <StatBox
-              label="Peso Total"
-              value={stepData.totalWeight ?? 0}
+              label={isSearch ? 'Arestas Árvore' : 'Peso Total'}
+              value={stepData.mstEdges?.size ?? 0}
               color="text-cyan-400"
             />
           </div>
         </Section>
       )}
 
-      <Section title={`Algoritmo 7.${algorithm === 'prim' ? '1' : algorithm === 'kruskal' ? '2' : '3'}`}>
+      <Section title={`Algoritmo 7.${algoChapter}`}>
         <div className="info-card p-2">
           {pseudocode.map((line, i) => (
             <div key={i} className={`pseudo-line ${i === pseudoLine ? 'active' : ''}`}>

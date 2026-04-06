@@ -450,6 +450,279 @@ export function generateBoruvkaSteps(graph) {
   return steps;
 }
 
+export function generateBfsSteps(graph, startNodeId) {
+  const steps = [];
+  const nodes = graph.getNodeArray().sort((a, b) => a.id - b.id);
+  if (nodes.length === 0) return steps;
+
+  const startId = startNodeId ?? nodes[0].id;
+  const visited = new Set();
+  const treeEdges = new Set();
+  const parents = new Map(nodes.map((n) => [n.id, null]));
+
+  const getEdgeBetween = (u, v) => {
+    const edges = graph.getEdgeArray();
+    return edges.find(
+      (e) => (e.source === u && e.target === v) || (e.source === v && e.target === u)
+    );
+  };
+
+  const bfsFrom = (root, isExtraComponent = false) => {
+    const queue = [root];
+    visited.add(root);
+
+    steps.push({
+      type: isExtraComponent ? 'new-component' : 'init',
+      description: isExtraComponent
+        ? `Novo componente encontrado. Inicia BFS em ${root}: marca como visitado e Enfileira(${root}).`
+        : `BFS: marca ${root} como visitado e Enfileira(${root}).`,
+      mstNodes: new Set(visited),
+      mstEdges: new Set(treeEdges),
+      candidateEdges: new Set(),
+      currentEdge: null,
+      totalWeight: treeEdges.size,
+      frontierType: 'queue',
+      frontierContents: [...queue],
+      frontierPopped: null,
+      pseudocodeLine: 1,
+    });
+
+    while (queue.length > 0) {
+      const u = queue.shift();
+      const neighbors = graph
+        .getNeighbors(u)
+        .slice()
+        .sort((a, b) => a.nodeId - b.nodeId);
+
+      steps.push({
+        type: 'dequeue',
+        description: `Desenfileira ${u}. Explora seus vizinhos em ordem crescente.`,
+        mstNodes: new Set(visited),
+        mstEdges: new Set(treeEdges),
+        candidateEdges: new Set(),
+        currentEdge: null,
+        totalWeight: treeEdges.size,
+        frontierType: 'queue',
+        frontierContents: [...queue],
+        frontierPopped: u,
+        pseudocodeLine: 3,
+      });
+
+      const newlyDiscovered = [];
+      for (const nb of neighbors) {
+        if (visited.has(nb.nodeId)) continue;
+        visited.add(nb.nodeId);
+        parents.set(nb.nodeId, u);
+        queue.push(nb.nodeId);
+
+        const edge = getEdgeBetween(u, nb.nodeId);
+        if (edge) treeEdges.add(edge.id);
+        newlyDiscovered.push({ nodeId: nb.nodeId, edgeId: edge?.id ?? null });
+      }
+
+      if (newlyDiscovered.length > 0) {
+        steps.push({
+          type: 'discover',
+          description: `Novos vértices descobertos a partir de ${u}: ${newlyDiscovered.map((d) => d.nodeId).join(', ')}. Eles entram na fila.`,
+          mstNodes: new Set(visited),
+          mstEdges: new Set(treeEdges),
+          candidateEdges: new Set(
+            newlyDiscovered.filter((d) => d.edgeId !== null).map((d) => d.edgeId)
+          ),
+          currentEdge: null,
+          totalWeight: treeEdges.size,
+          frontierType: 'queue',
+          frontierContents: [...queue],
+          frontierPopped: null,
+          pseudocodeLine: 6,
+        });
+      } else {
+        steps.push({
+          type: 'no-discover',
+          description: `Nenhum novo vértice descoberto a partir de ${u}.`,
+          mstNodes: new Set(visited),
+          mstEdges: new Set(treeEdges),
+          candidateEdges: new Set(),
+          currentEdge: null,
+          totalWeight: treeEdges.size,
+          frontierType: 'queue',
+          frontierContents: [...queue],
+          frontierPopped: null,
+          pseudocodeLine: 5,
+        });
+      }
+    }
+  };
+
+  bfsFrom(startId, false);
+
+  for (const node of nodes) {
+    if (!visited.has(node.id)) bfsFrom(node.id, true);
+  }
+
+  steps.push({
+    type: 'complete',
+    description: `BFS concluída! ${visited.size} vértice(s) visitado(s) e ${treeEdges.size} aresta(s) de árvore.`,
+    mstNodes: new Set(visited),
+    mstEdges: new Set(treeEdges),
+    candidateEdges: new Set(),
+    currentEdge: null,
+    totalWeight: treeEdges.size,
+    frontierType: 'queue',
+    frontierContents: [],
+    frontierPopped: null,
+    pseudocodeLine: 8,
+  });
+
+  return steps;
+}
+
+export function generateDfsSteps(graph, startNodeId) {
+  const steps = [];
+  const nodes = graph.getNodeArray().sort((a, b) => a.id - b.id);
+  if (nodes.length === 0) return steps;
+
+  const startId = startNodeId ?? nodes[0].id;
+  const visited = new Set();
+  const treeEdges = new Set();
+
+  const getEdgeBetween = (u, v) => {
+    const edges = graph.getEdgeArray();
+    return edges.find(
+      (e) => (e.source === u && e.target === v) || (e.source === v && e.target === u)
+    );
+  };
+
+  const dfsFrom = (root, isExtraComponent = false) => {
+    const stack = [{ nodeId: root, parent: null, edgeId: null }];
+
+    steps.push({
+      type: isExtraComponent ? 'new-component' : 'init',
+      description: isExtraComponent
+        ? `Novo componente encontrado. Inicia DFS em ${root}: Empilha(${root}).`
+        : `DFS: Empilha(${root}) como vértice inicial.`,
+      mstNodes: new Set(visited),
+      mstEdges: new Set(treeEdges),
+      candidateEdges: new Set(),
+      currentEdge: null,
+      totalWeight: treeEdges.size,
+      frontierType: 'stack',
+      frontierContents: stack.map((s) => s.nodeId),
+      frontierPopped: null,
+      pseudocodeLine: 1,
+    });
+
+    while (stack.length > 0) {
+      const top = stack.pop();
+      const u = top.nodeId;
+
+      steps.push({
+        type: 'pop',
+        description: `Desempilha ${u}.`,
+        mstNodes: new Set(visited),
+        mstEdges: new Set(treeEdges),
+        candidateEdges: new Set(),
+        currentEdge: top.edgeId,
+        totalWeight: treeEdges.size,
+        frontierType: 'stack',
+        frontierContents: stack.map((s) => s.nodeId),
+        frontierPopped: u,
+        pseudocodeLine: 3,
+      });
+
+      if (visited.has(u)) {
+        steps.push({
+          type: 'already-visited',
+          description: `${u} já estava visitado; segue para o próximo da pilha.`,
+          mstNodes: new Set(visited),
+          mstEdges: new Set(treeEdges),
+          candidateEdges: new Set(),
+          currentEdge: null,
+          totalWeight: treeEdges.size,
+          frontierType: 'stack',
+          frontierContents: stack.map((s) => s.nodeId),
+          frontierPopped: null,
+          pseudocodeLine: 4,
+        });
+        continue;
+      }
+
+      visited.add(u);
+      if (top.edgeId !== null) treeEdges.add(top.edgeId);
+
+      steps.push({
+        type: 'visit',
+        description:
+          top.parent === null
+            ? `Visita ${u} (raiz da DFS deste componente).`
+            : `Visita ${u} via aresta (${top.parent},${u}).`,
+        mstNodes: new Set(visited),
+        mstEdges: new Set(treeEdges),
+        candidateEdges: new Set(),
+        currentEdge: top.edgeId,
+        totalWeight: treeEdges.size,
+        frontierType: 'stack',
+        frontierContents: stack.map((s) => s.nodeId),
+        frontierPopped: null,
+        pseudocodeLine: 4,
+      });
+
+      const neighbors = graph
+        .getNeighbors(u)
+        .slice()
+        .sort((a, b) => b.nodeId - a.nodeId);
+
+      const pushed = [];
+      for (const nb of neighbors) {
+        if (visited.has(nb.nodeId)) continue;
+        const edge = getEdgeBetween(u, nb.nodeId);
+        stack.push({ nodeId: nb.nodeId, parent: u, edgeId: edge?.id ?? null });
+        pushed.push({ nodeId: nb.nodeId, edgeId: edge?.id ?? null });
+      }
+
+      if (pushed.length > 0) {
+        steps.push({
+          type: 'push-neighbors',
+          description: `Empilha vizinhos não visitados de ${u}: ${pushed.map((p) => p.nodeId).join(', ')}.`,
+          mstNodes: new Set(visited),
+          mstEdges: new Set(treeEdges),
+          candidateEdges: new Set(
+            pushed.filter((p) => p.edgeId !== null).map((p) => p.edgeId)
+          ),
+          currentEdge: null,
+          totalWeight: treeEdges.size,
+          frontierType: 'stack',
+          frontierContents: stack.map((s) => s.nodeId),
+          frontierPopped: null,
+          pseudocodeLine: 6,
+        });
+      }
+    }
+  };
+
+  dfsFrom(startId, false);
+
+  for (const node of nodes) {
+    if (!visited.has(node.id)) dfsFrom(node.id, true);
+  }
+
+  steps.push({
+    type: 'complete',
+    description: `DFS concluída! ${visited.size} vértice(s) visitado(s) e ${treeEdges.size} aresta(s) de árvore.`,
+    mstNodes: new Set(visited),
+    mstEdges: new Set(treeEdges),
+    candidateEdges: new Set(),
+    currentEdge: null,
+    totalWeight: treeEdges.size,
+    frontierType: 'stack',
+    frontierContents: [],
+    frontierPopped: null,
+    pseudocodeLine: 8,
+  });
+
+  return steps;
+}
+
 export const PSEUDOCODE = {
   prim: [
     ' 2  H ← ∅;',
@@ -497,6 +770,26 @@ export const PSEUDOCODE = {
     '12  retorna L.T;',
     '13  fim.',
   ],
+  dfs: [
+    ' 1  para cada v ∈ V: visitado[v] ← falso',
+    ' 2  Empilha(s)',
+    ' 3  enquanto pilha ≠ ∅ faça',
+    ' 4    u ← Desempilha(); se visitado[u] continue',
+    ' 5    visitado[u] ← verdadeiro',
+    ' 6    para cada w adj. a u (não visitado): Empilha(w)',
+    ' 7  fim-enquanto',
+    ' 8  fim.',
+  ],
+  bfs: [
+    ' 1  para cada v ∈ V: visitado[v] ← falso',
+    ' 2  visitado[s] ← verdadeiro; Enfileira(s)',
+    ' 3  enquanto fila ≠ ∅ faça',
+    ' 4    u ← Desenfileira()',
+    ' 5    para cada w adj. a u faça',
+    ' 6      se não visitado[w]: visitado[w] ← verdadeiro; Enfileira(w)',
+    ' 7  fim-enquanto',
+    ' 8  fim.',
+  ],
 };
 
 export const COMPLEXITY = {
@@ -536,5 +829,17 @@ export const COMPLEXITY = {
     space: 'O(V + A)',
     detail:
       'Cada iteração reduz |L| pelo menos pela metade → no máximo O(log V) iterações. Cada iteração percorre todas as A arestas. Total: O(A log V).',
+  },
+  dfs: {
+    time: 'O(V + A)',
+    space: 'O(V)',
+    detail:
+      'Cada vértice é visitado no máximo uma vez e cada aresta é analisada no máximo duas vezes (grafo não-direcionado). Pilha + marcação de visitados ocupam O(V).',
+  },
+  bfs: {
+    time: 'O(V + A)',
+    space: 'O(V)',
+    detail:
+      'Cada vértice entra e sai da fila no máximo uma vez. A varredura total das listas de adjacência custa O(A), resultando em O(V + A).',
   },
 };
