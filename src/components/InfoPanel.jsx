@@ -15,7 +15,10 @@ export default function InfoPanel({
   ufHistory,
 }) {
   return (
-    <aside className="w-72 bg-slate-900/40 border-l border-white/5 flex flex-col overflow-y-auto shrink-0">
+    <aside
+      className="w-72 border-l flex flex-col overflow-y-auto shrink-0"
+      style={{ background: 'var(--panel-bg)', borderColor: 'var(--border-color)' }}
+    >
       <div className="p-4 flex flex-col gap-5">
         {activeTab === 'editor' && (
           <EditorInfo nodes={nodes} edges={edges} buildGraph={buildGraph} />
@@ -42,9 +45,10 @@ export default function InfoPanel({
 function Section({ title, children }) {
   return (
     <div>
-      <h3 className="text-[0.65rem] font-semibold uppercase tracking-widest text-slate-500 mb-2">
-        {title}
-      </h3>
+      <div className="section-title">
+        <div className="section-title-bar" />
+        <h3>{title}</h3>
+      </div>
       {children}
     </div>
   );
@@ -158,19 +162,21 @@ function AlgorithmInfo({ algorithm, stepData, stepIndex, totalSteps }) {
         </div>
       </Section>
 
-      <Section title="Complexidade">
-        <div className="info-card text-xs leading-relaxed">
-          <div className="flex flex-col gap-1 mb-2">
-            <span className="text-slate-400">
-              Tempo: <span className="text-cyan-400 font-mono font-semibold">{complexity.time}</span>
-            </span>
-            <span className="text-slate-400">
-              Espaço: <span className="text-violet-400 font-mono font-semibold">{complexity.space}</span>
-            </span>
+      {!isMatching && (
+        <Section title="Complexidade">
+          <div className="info-card text-xs leading-relaxed">
+            <div className="flex flex-col gap-1 mb-2">
+              <span className="text-slate-400">
+                Tempo: <span className="text-cyan-400 font-mono font-semibold">{complexity.time}</span>
+              </span>
+              <span className="text-slate-400">
+                Espaço: <span className="text-violet-400 font-mono font-semibold">{complexity.space}</span>
+              </span>
+            </div>
+            {complexity.detail && <p className="text-slate-500">{complexity.detail}</p>}
           </div>
-          {complexity.detail && <p className="text-slate-500">{complexity.detail}</p>}
-        </div>
-      </Section>
+        </Section>
+      )}
 
       {complexity.ufAnalysis && (
         <Section title="Conjuntos Disjuntos no Kruskal">
@@ -335,11 +341,25 @@ function RepresentationInfo({ reprFormat, buildGraph }) {
   );
 }
 
+const STAT_GLOWS = {
+  'text-cyan-400':    'rgba(34, 211, 238, 0.15)',
+  'text-violet-400':  'rgba(167, 139, 250, 0.15)',
+  'text-emerald-400': 'rgba(52, 211, 153, 0.15)',
+  'text-amber-400':   'rgba(251, 191, 36, 0.15)',
+  'text-rose-400':    'rgba(251, 113, 133, 0.15)',
+};
+
 function StatBox({ label, value, color = 'text-white' }) {
+  const glow = STAT_GLOWS[color] || 'rgba(255,255,255,0.06)';
   return (
-    <div className="stat-box flex-1">
-      <span className={`text-lg font-bold font-mono ${color}`}>{value}</span>
-      <span className="text-[0.6rem] text-slate-500 mt-0.5">{label}</span>
+    <div
+      className="stat-box flex-1 group"
+      style={{ background: `radial-gradient(ellipse 80% 60% at 50% 110%, ${glow} 0%, var(--surface) 70%)` }}
+    >
+      <span className={`text-xl font-black font-mono ${color}`}>{value}</span>
+      <span className="text-[0.58rem] uppercase tracking-wider mt-0.5" style={{ color: 'var(--text-muted)' }}>
+        {label}
+      </span>
     </div>
   );
 }

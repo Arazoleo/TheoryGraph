@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import GraphCanvas from './components/GraphCanvas';
@@ -52,6 +53,13 @@ export default function App() {
   const [ufHighlighted, setUfHighlighted] = useState(new Set());
 
   const [reprFormat, setReprFormat] = useState('adjMatrix');
+
+  const [isDark, setIsDark] = useState(true);
+  const toggleTheme = useCallback(() => setIsDark((d) => !d), []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', !isDark);
+  }, [isDark]);
 
   // ---------- Graph actions ----------
 
@@ -307,14 +315,18 @@ export default function App() {
   // ---------- Render ----------
 
   return (
-    <div className="h-screen flex flex-col bg-[#050510] text-slate-200 overflow-hidden">
-      <Header activeTab={activeTab} onTabChange={handleTabChange} />
+    <div
+      className="h-screen flex flex-col overflow-hidden"
+      style={{ background: 'var(--app-bg)', color: 'var(--text-primary)' }}
+    >
+      <Header activeTab={activeTab} onTabChange={handleTabChange} isDark={isDark} onThemeToggle={toggleTheme} />
 
       <div className="flex-1 flex overflow-hidden">
         <Sidebar
           activeTab={activeTab}
           tool={tool}
           onToolChange={setTool}
+          edges={edges}
           weighted={weighted}
           onWeightedChange={setWeighted}
           onGenerateRandom={generateRandom}
@@ -416,7 +428,10 @@ export default function App() {
 
       {/* Weight Modal */}
       {weightModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div
+          className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50"
+          style={{ background: 'var(--modal-overlay)' }}
+        >
           <div className="glass rounded-2xl p-6 w-80 animate-fade-in">
             <h3 className="text-base font-semibold mb-1">Peso da Aresta</h3>
             <p className="text-xs text-slate-500 mb-4 font-mono">
@@ -430,7 +445,8 @@ export default function App() {
                 if (e.key === 'Enter') confirmWeight();
                 if (e.key === 'Escape') setWeightModal(null);
               }}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white text-center text-lg font-mono focus:outline-none focus:border-cyan-400/50 transition mb-4"
+              className="w-full border rounded-xl px-4 py-2.5 text-center text-lg font-mono focus:outline-none focus:border-cyan-400/50 transition mb-4"
+              style={{ background: 'var(--input-bg)', borderColor: 'var(--input-border)', color: 'var(--text-primary)' }}
               autoFocus
               min="1"
             />

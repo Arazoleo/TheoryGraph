@@ -10,6 +10,43 @@ import {
   Zap,
 } from 'lucide-react';
 
+const ALGO_LEGEND = {
+  prim: [
+    { color: '#34d399', label: 'Na AGM' },
+    { color: '#22d3ee', label: 'Candidato' },
+    { color: '#f87171', label: 'Rejeitado' },
+  ],
+  kruskal: [
+    { color: '#34d399', label: 'Na AGM' },
+    { color: '#fbbf24', label: 'Em consideração' },
+    { color: '#f87171', label: 'Rejeitado (ciclo)' },
+  ],
+  boruvka: [
+    { color: '#34d399', label: 'Na AGM' },
+    { color: '#22d3ee', label: 'Mais barato do componente' },
+  ],
+  dfs: [
+    { color: '#34d399', label: 'Visitado' },
+    { color: '#22d3ee', label: 'Atual / Empilhado' },
+  ],
+  bfs: [
+    { color: '#34d399', label: 'Visitado' },
+    { color: '#22d3ee', label: 'Atual / Na fila' },
+  ],
+  aps: [
+    { color: '#34d399', label: 'No emparelhamento M' },
+    { color: '#fb7185', label: 'R(T) — raízes' },
+    { color: '#a78bfa', label: 'B(T) — cobertos' },
+    { color: '#fbbf24', label: 'Caminho aumentante' },
+  ],
+  egervary: [
+    { color: '#34d399', label: 'Emparelhamento M*' },
+    { color: '#fb7185', label: 'R(T) — raízes' },
+    { color: '#a78bfa', label: 'B(T) — cobertos' },
+    { color: '#fbbf24', label: 'Caminho aumentante' },
+  ],
+};
+
 const editorTools = [
   { id: 'select', label: 'Selecionar', icon: MousePointer2 },
   { id: 'addNode', label: 'Vértice +', icon: CirclePlus },
@@ -50,6 +87,7 @@ export default function Sidebar({
   algorithm,
   onAlgorithmChange,
   nodes,
+  edges,
   startNode,
   onStartNodeChange,
   speed,
@@ -75,7 +113,10 @@ export default function Sidebar({
   algoError,
 }) {
   return (
-    <aside className="w-64 bg-slate-900/40 border-r border-white/5 flex flex-col overflow-y-auto shrink-0">
+    <aside
+      className="w-64 border-r flex flex-col overflow-y-auto shrink-0"
+      style={{ background: 'var(--panel-bg)', borderColor: 'var(--border-color)' }}
+    >
       <div className="p-4 flex flex-col gap-5">
         {/* ===== EDITOR TAB ===== */}
         {activeTab === 'editor' && (
@@ -97,6 +138,35 @@ export default function Sidebar({
                 })}
               </div>
             </Section>
+
+            {nodes.length > 0 && (
+              <Section title="Grafo Atual">
+                <div className="flex flex-wrap gap-1 mb-2.5">
+                  {nodes.slice(0, 18).map((n) => (
+                    <div
+                      key={n.id}
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold shrink-0"
+                      style={{ fontSize: '7px', background: 'linear-gradient(135deg, #94a3b8, #475569)' }}
+                    >
+                      {n.label}
+                    </div>
+                  ))}
+                  {nodes.length > 18 && (
+                    <div
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                      style={{ background: 'var(--surface)', color: 'var(--text-muted)', fontSize: '7px' }}
+                    >
+                      +{nodes.length - 18}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <span>{nodes.length} vértice{nodes.length !== 1 ? 's' : ''}</span>
+                  <span style={{ color: 'var(--border-color)' }}>·</span>
+                  <span>{edges.length} aresta{edges.length !== 1 ? 's' : ''}</span>
+                </div>
+              </Section>
+            )}
 
             <Section title="Opções">
               <label className="flex items-center gap-2.5 text-sm text-slate-300 cursor-pointer select-none">
@@ -151,7 +221,8 @@ export default function Sidebar({
                 <select
                   value={startNode ?? ''}
                   onChange={(e) => onStartNodeChange(e.target.value === '' ? null : Number(e.target.value))}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-cyan-500/50"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500/50"
+                  style={{ background: 'var(--input-bg)', borderColor: 'var(--input-border)', color: 'var(--text-primary)' }}
                 >
                   {nodes.map((n) => (
                     <option key={n.id} value={n.id}>
@@ -208,6 +279,24 @@ export default function Sidebar({
               </Section>
             )}
 
+            {ALGO_LEGEND[algorithm] && (
+              <Section title="Legenda">
+                <div className="flex flex-col gap-1.5">
+                  {ALGO_LEGEND[algorithm].map((item) => (
+                    <div key={item.label} className="flex items-center gap-2.5">
+                      <div
+                        className="w-3 h-3 rounded-full shrink-0"
+                        style={{ background: item.color, boxShadow: `0 0 6px ${item.color}50` }}
+                      />
+                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        {item.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Section>
+            )}
+
             {algoError && (
               <div className="rounded-xl border border-rose-500/30 bg-rose-500/8 px-3 py-2.5 text-xs text-rose-300 leading-relaxed">
                 {algoError}
@@ -217,7 +306,13 @@ export default function Sidebar({
             <button
               onClick={onRunAlgorithm}
               disabled={nodes.length === 0}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-violet-600 text-white font-semibold text-sm hover:opacity-90 transition disabled:opacity-40 flex items-center justify-center gap-2"
+              className="w-full py-2.5 rounded-xl text-white font-bold text-sm transition-all duration-200 disabled:opacity-40 flex items-center justify-center gap-2 relative overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, #0e7490 0%, #4f46e5 55%, #7c3aed 100%)',
+                boxShadow: nodes.length > 0 ? '0 0 20px rgba(34,211,238,0.25), 0 4px 12px rgba(0,0,0,0.4)' : 'none',
+              }}
+              onMouseEnter={e => { if (nodes.length > 0) e.currentTarget.style.boxShadow = '0 0 30px rgba(34,211,238,0.4), 0 6px 18px rgba(0,0,0,0.5)'; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = nodes.length > 0 ? '0 0 20px rgba(34,211,238,0.25), 0 4px 12px rgba(0,0,0,0.4)' : 'none'; }}
             >
               <Zap size={15} />
               Iniciar {algorithms.find((a) => a.id === algorithm)?.label}
@@ -256,7 +351,8 @@ export default function Sidebar({
                 <select
                   value={ufFindSelect ?? ''}
                   onChange={(e) => onUFFindSelectChange(Number(e.target.value))}
-                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-violet-500/50"
+                  className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-violet-500/50"
+                  style={{ background: 'var(--input-bg)', borderColor: 'var(--input-border)', color: 'var(--text-primary)' }}
                 >
                   {nodes.map((n) => (
                     <option key={n.id} value={n.id}>
@@ -274,7 +370,8 @@ export default function Sidebar({
                   <select
                     value={ufUnionA ?? ''}
                     onChange={(e) => onUFUnionAChange(Number(e.target.value))}
-                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-violet-500/50"
+                    className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-violet-500/50"
+                    style={{ background: 'var(--input-bg)', borderColor: 'var(--input-border)', color: 'var(--text-primary)' }}
                   >
                     {nodes.map((n) => (
                       <option key={n.id} value={n.id}>{n.label}</option>
@@ -283,7 +380,8 @@ export default function Sidebar({
                   <select
                     value={ufUnionB ?? ''}
                     onChange={(e) => onUFUnionBChange(Number(e.target.value))}
-                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-violet-500/50"
+                    className="flex-1 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-violet-500/50"
+                    style={{ background: 'var(--input-bg)', borderColor: 'var(--input-border)', color: 'var(--text-primary)' }}
                   >
                     {nodes.map((n) => (
                       <option key={n.id} value={n.id}>{n.label}</option>
@@ -327,9 +425,10 @@ export default function Sidebar({
 function Section({ title, children }) {
   return (
     <div>
-      <h3 className="text-[0.65rem] font-semibold uppercase tracking-widest text-slate-500 mb-2.5">
-        {title}
-      </h3>
+      <div className="section-title">
+        <div className="section-title-bar" />
+        <h3>{title}</h3>
+      </div>
       {children}
     </div>
   );

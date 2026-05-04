@@ -14,7 +14,7 @@ export default function AlgoControls({
   const progress = totalSteps > 0 ? ((currentStep + 1) / totalSteps) * 100 : 0;
 
   return (
-    <div className="h-16 border-t border-white/5 bg-slate-900/60 backdrop-blur-md flex items-center justify-center gap-3 px-6 shrink-0">
+    <div className="h-16 border-t aux-bar backdrop-blur-md flex items-center justify-center gap-3 px-6 shrink-0">
       <button onClick={onReset} className="ctrl-btn" title="Reiniciar">
         <SkipBack size={16} />
       </button>
@@ -55,14 +55,21 @@ export default function AlgoControls({
       </button>
 
       <div className="ml-4 flex items-center gap-3 text-sm">
-        <div className="w-40 h-1.5 bg-white/5 rounded-full overflow-hidden">
+        <div className="w-44 h-1.5 rounded-full overflow-hidden relative" style={{ background: 'var(--surface)' }}>
           <div
-            className="h-full bg-gradient-to-r from-cyan-500 to-violet-500 rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
+            className="h-full rounded-full transition-all duration-300"
+            style={{
+              width: `${progress}%`,
+              background: 'linear-gradient(90deg, #0891b2 0%, #4f46e5 50%, #7c3aed 100%)',
+              boxShadow: progress > 0 ? '0 0 10px rgba(34,211,238,0.5), 0 0 5px rgba(124,58,237,0.4)' : 'none',
+            }}
           />
         </div>
-        <span className="text-slate-400 text-xs font-mono w-16 text-center">
-          {currentStep + 1} / {totalSteps}
+        <span
+          className="text-xs font-mono w-16 text-center tabular-nums"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          {currentStep + 1} <span style={{ color: 'var(--border-bright)' }}>/</span> {totalSteps}
         </span>
       </div>
     </div>

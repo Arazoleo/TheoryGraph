@@ -165,89 +165,106 @@ export default function GraphCanvas({
       style={{ cursor: getCursor() }}
     >
       <defs>
-        <filter id="glow-green" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="5" result="b" />
-          <feFlood floodColor="#34d399" floodOpacity="0.5" result="c" />
-          <feComposite in="c" in2="b" operator="in" result="s" />
-          <feMerge>
-            <feMergeNode in="s" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <filter id="glow-cyan" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="5" result="b" />
-          <feFlood floodColor="#22d3ee" floodOpacity="0.5" result="c" />
-          <feComposite in="c" in2="b" operator="in" result="s" />
-          <feMerge>
-            <feMergeNode in="s" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <filter id="glow-amber" x="-50%" y="-50%" width="200%" height="200%">
+        {/* Stronger glow filters */}
+        <filter id="glow-green" x="-60%" y="-60%" width="220%" height="220%">
           <feGaussianBlur stdDeviation="6" result="b" />
-          <feFlood floodColor="#fbbf24" floodOpacity="0.6" result="c" />
-          <feComposite in="c" in2="b" operator="in" result="s" />
-          <feMerge>
-            <feMergeNode in="s" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <filter id="glow-red" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="5" result="b" />
-          <feFlood floodColor="#f87171" floodOpacity="0.5" result="c" />
-          <feComposite in="c" in2="b" operator="in" result="s" />
-          <feMerge>
-            <feMergeNode in="s" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <radialGradient id="grad-default" cx="35%" cy="30%">
-          <stop offset="0%" stopColor="#94a3b8" />
-          <stop offset="100%" stopColor="#475569" />
-        </radialGradient>
-        <radialGradient id="grad-green" cx="35%" cy="30%">
-          <stop offset="0%" stopColor="#6ee7b7" />
-          <stop offset="100%" stopColor="#10b981" />
-        </radialGradient>
-        <radialGradient id="grad-cyan" cx="35%" cy="30%">
-          <stop offset="0%" stopColor="#67e8f9" />
-          <stop offset="100%" stopColor="#06b6d4" />
-        </radialGradient>
-        <radialGradient id="grad-amber" cx="35%" cy="30%">
-          <stop offset="0%" stopColor="#fde68a" />
-          <stop offset="100%" stopColor="#f59e0b" />
-        </radialGradient>
-        <radialGradient id="grad-rose" cx="35%" cy="30%">
-          <stop offset="0%" stopColor="#fda4af" />
-          <stop offset="100%" stopColor="#f43f5e" />
-        </radialGradient>
-        <radialGradient id="grad-violet" cx="35%" cy="30%">
-          <stop offset="0%" stopColor="#c4b5fd" />
-          <stop offset="100%" stopColor="#7c3aed" />
-        </radialGradient>
-        <filter id="glow-rose" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="5" result="b" />
-          <feFlood floodColor="#fb7185" floodOpacity="0.5" result="c" />
+          <feFlood floodColor="#34d399" floodOpacity="0.65" result="c" />
           <feComposite in="c" in2="b" operator="in" result="s" />
           <feMerge><feMergeNode in="s" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
-        <radialGradient id="grad-removed" cx="35%" cy="30%">
+        <filter id="glow-cyan" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="6" result="b" />
+          <feFlood floodColor="#22d3ee" floodOpacity="0.65" result="c" />
+          <feComposite in="c" in2="b" operator="in" result="s" />
+          <feMerge><feMergeNode in="s" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="glow-amber" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="7" result="b" />
+          <feFlood floodColor="#fbbf24" floodOpacity="0.7" result="c" />
+          <feComposite in="c" in2="b" operator="in" result="s" />
+          <feMerge><feMergeNode in="s" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="glow-red" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="6" result="b" />
+          <feFlood floodColor="#f87171" floodOpacity="0.6" result="c" />
+          <feComposite in="c" in2="b" operator="in" result="s" />
+          <feMerge><feMergeNode in="s" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="glow-rose" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="6" result="b" />
+          <feFlood floodColor="#fb7185" floodOpacity="0.65" result="c" />
+          <feComposite in="c" in2="b" operator="in" result="s" />
+          <feMerge><feMergeNode in="s" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="glow-violet" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="6" result="b" />
+          <feFlood floodColor="#a78bfa" floodOpacity="0.65" result="c" />
+          <feComposite in="c" in2="b" operator="in" result="s" />
+          <feMerge><feMergeNode in="s" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+
+        {/* Node gradients — richer */}
+        <radialGradient id="grad-default" cx="35%" cy="25%">
+          <stop offset="0%" stopColor="#64748b" />
+          <stop offset="100%" stopColor="#1e293b" />
+        </radialGradient>
+        <radialGradient id="grad-green" cx="35%" cy="25%">
+          <stop offset="0%" stopColor="#86efac" />
+          <stop offset="100%" stopColor="#059669" />
+        </radialGradient>
+        <radialGradient id="grad-cyan" cx="35%" cy="25%">
+          <stop offset="0%" stopColor="#7dd3fc" />
+          <stop offset="100%" stopColor="#0369a1" />
+        </radialGradient>
+        <radialGradient id="grad-amber" cx="35%" cy="25%">
+          <stop offset="0%" stopColor="#fde68a" />
+          <stop offset="100%" stopColor="#d97706" />
+        </radialGradient>
+        <radialGradient id="grad-rose" cx="35%" cy="25%">
+          <stop offset="0%" stopColor="#fda4af" />
+          <stop offset="100%" stopColor="#be123c" />
+        </radialGradient>
+        <radialGradient id="grad-violet" cx="35%" cy="25%">
+          <stop offset="0%" stopColor="#c4b5fd" />
+          <stop offset="100%" stopColor="#5b21b6" />
+        </radialGradient>
+        <radialGradient id="grad-removed" cx="35%" cy="25%">
           <stop offset="0%" stopColor="#1e293b" />
           <stop offset="100%" stopColor="#0f172a" />
         </radialGradient>
-        <filter id="glow-violet" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="5" result="b" />
-          <feFlood floodColor="#a78bfa" floodOpacity="0.5" result="c" />
-          <feComposite in="c" in2="b" operator="in" result="s" />
-          <feMerge><feMergeNode in="s" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-        <pattern id="dotgrid" width="24" height="24" patternUnits="userSpaceOnUse">
-          <circle cx="12" cy="12" r="0.6" fill="rgba(255,255,255,0.04)" />
+
+        {/* Canvas aurora layers */}
+        <radialGradient id="aurora-violet" cx="20%" cy="75%" r="55%">
+          <stop offset="0%" stopColor="#7c3aed" stopOpacity="0.07" />
+          <stop offset="100%" stopColor="#7c3aed" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="aurora-cyan" cx="80%" cy="25%" r="55%">
+          <stop offset="0%" stopColor="#0891b2" stopOpacity="0.05" />
+          <stop offset="100%" stopColor="#0891b2" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id="aurora-emerald" cx="55%" cy="90%" r="40%">
+          <stop offset="0%" stopColor="#059669" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="#059669" stopOpacity="0" />
+        </radialGradient>
+
+        {/* Vignette */}
+        <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+          <stop offset="50%" stopColor="#000000" stopOpacity="0" />
+          <stop offset="100%" stopColor="#000000" stopOpacity="0.55" />
+        </radialGradient>
+
+        <pattern id="dotgrid" width="28" height="28" patternUnits="userSpaceOnUse">
+          <circle cx="14" cy="14" r="0.7" style={{ fill: 'var(--canvas-dot)' }} />
         </pattern>
       </defs>
 
-      <rect className="bg-layer" width="100%" height="100%" fill="#050510" />
+      {/* Background */}
+      <rect className="bg-layer" width="100%" height="100%" />
+      <rect width="100%" height="100%" fill="url(#aurora-violet)" />
+      <rect width="100%" height="100%" fill="url(#aurora-cyan)" />
+      <rect width="100%" height="100%" fill="url(#aurora-emerald)" />
       <rect width="100%" height="100%" fill="url(#dotgrid)" />
+      <rect width="100%" height="100%" fill="url(#vignette)" style={{ pointerEvents: 'none' }} />
 
       {/* Edges */}
       {edges.map((edge) => {
@@ -288,7 +305,7 @@ export default function GraphCanvas({
                   x={midX - 14} y={midY - 11}
                   width={28} height={22}
                   rx={6}
-                  fill="#0c0c20"
+                  style={{ fill: 'var(--badge-bg)' }}
                   stroke={color}
                   strokeWidth={highlights.mstEdges?.has(edge.id) || isCurrent || isRejected ? 1 : 0.5}
                   opacity={0.95}
@@ -296,7 +313,7 @@ export default function GraphCanvas({
                 <text
                   x={midX} y={midY + 4}
                   textAnchor="middle"
-                  fill={highlights.mstEdges?.has(edge.id) || isCurrent || isRejected || isCand ? color : '#94a3b8'}
+                  style={{ fill: highlights.mstEdges?.has(edge.id) || isCurrent || isRejected || isCand ? color : 'var(--text-secondary)' }}
                   fontSize="11"
                   fontWeight="600"
                   fontFamily="var(--font-mono)"
@@ -345,25 +362,58 @@ export default function GraphCanvas({
                 : tool === 'select'
                 ? dragging === node.id ? 'grabbing' : 'grab'
                 : 'pointer',
-              opacity: removed ? 0.2 : 1,
+              opacity: removed ? 0.15 : 1,
             }}
           >
+            {/* Outer pulsing ring for highlighted nodes */}
+            {isHighlighted && !removed && (
+              <circle
+                cx={node.x} cy={node.y}
+                r={NODE_RADIUS + 9}
+                fill="none"
+                stroke={stroke}
+                strokeWidth={1.2}
+                className="animate-ring-pulse"
+                style={{ pointerEvents: 'none' }}
+              />
+            )}
+            {/* Inner ring */}
+            {isHighlighted && !removed && (
+              <circle
+                cx={node.x} cy={node.y}
+                r={NODE_RADIUS + 4}
+                fill="none"
+                stroke={stroke}
+                strokeWidth={0.6}
+                opacity={0.35}
+                style={{ pointerEvents: 'none' }}
+              />
+            )}
             <circle
               cx={node.x} cy={node.y}
               r={NODE_RADIUS}
               fill={fill}
               stroke={stroke}
-              strokeWidth={isHighlighted ? 2.5 : 1.5}
+              strokeWidth={isHighlighted ? 2.8 : 1.8}
               filter={filter}
+            />
+            {/* Inner highlight spec */}
+            <circle
+              cx={node.x - 6} cy={node.y - 6}
+              r={4}
+              fill="white"
+              opacity={removed ? 0 : 0.12}
+              style={{ pointerEvents: 'none' }}
             />
             <text
               x={node.x} y={node.y + 5}
               textAnchor="middle"
               fill="white"
               fontSize="13"
-              fontWeight="700"
+              fontWeight="800"
               fontFamily="var(--font-sans)"
               pointerEvents="none"
+              style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
             >
               {node.label}
             </text>
@@ -376,7 +426,7 @@ export default function GraphCanvas({
         <text
           x="50%" y="50%"
           textAnchor="middle"
-          fill="#334155"
+          style={{ fill: 'var(--canvas-empty-text)' }}
           fontSize="15"
           fontFamily="var(--font-sans)"
           pointerEvents="none"

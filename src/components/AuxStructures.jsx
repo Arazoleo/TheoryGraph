@@ -4,7 +4,7 @@ export default function AuxStructures({ algorithm, stepData }) {
   if (!stepData) return null;
 
   return (
-    <div className="border-t border-white/5 bg-slate-900/50 backdrop-blur-sm shrink-0 overflow-hidden">
+    <div className="border-t aux-bar backdrop-blur-sm shrink-0 overflow-hidden">
       <div className="px-4 py-2.5 overflow-x-auto">
         {algorithm === 'prim' && <PrimHeap stepData={stepData} />}
         {algorithm === 'kruskal' && <KruskalEdges stepData={stepData} />}
