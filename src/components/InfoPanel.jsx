@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { MousePointer2, CirclePlus, Spline, Trash2 } from 'lucide-react';
 import { PSEUDOCODE, COMPLEXITY } from '../lib/algorithms';
 
 export default function InfoPanel({
@@ -78,11 +79,26 @@ function EditorInfo({ nodes, edges, buildGraph }) {
       </Section>
 
       <Section title="Como usar">
-        <div className="text-xs text-slate-400 leading-relaxed space-y-2">
-          <p><strong className="text-slate-300">Selecionar:</strong> clique e arraste vértices para mover.</p>
-          <p><strong className="text-slate-300">Vértice +:</strong> clique no canvas para adicionar.</p>
-          <p><strong className="text-slate-300">Aresta +:</strong> clique em dois vértices para conectá-los.</p>
-          <p><strong className="text-slate-300">Deletar:</strong> clique em vértices ou arestas para remover.</p>
+        <div className="space-y-2">
+          {[
+            { Icon: MousePointer2, label: 'Selecionar', desc: 'clique e arraste vértices' },
+            { Icon: CirclePlus, label: 'Vértice +', desc: 'clique no canvas vazio' },
+            { Icon: Spline, label: 'Aresta +', desc: 'clique em dois vértices' },
+            { Icon: Trash2, label: 'Deletar', desc: 'clique em vértices ou arestas' },
+          ].map(({ Icon, label, desc }) => (
+            <div key={label} className="flex items-start gap-2.5">
+              <div
+                className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 mt-px"
+                style={{ background: 'var(--surface)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}
+              >
+                <Icon size={12} />
+              </div>
+              <div className="text-xs leading-snug pt-0.5">
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{label}</span>
+                <span style={{ color: 'var(--text-muted)' }}> — {desc}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </Section>
     </>

@@ -323,13 +323,7 @@ export default function Sidebar({
             <button
               onClick={onRunAlgorithm}
               disabled={nodes.length === 0}
-              className="w-full py-2.5 rounded-xl text-white font-bold text-sm transition-all duration-200 disabled:opacity-40 flex items-center justify-center gap-2 relative overflow-hidden"
-              style={{
-                background: 'linear-gradient(135deg, #0e7490 0%, #4f46e5 55%, #7c3aed 100%)',
-                boxShadow: nodes.length > 0 ? '0 0 20px rgba(34,211,238,0.25), 0 4px 12px rgba(0,0,0,0.4)' : 'none',
-              }}
-              onMouseEnter={e => { if (nodes.length > 0) e.currentTarget.style.boxShadow = '0 0 30px rgba(34,211,238,0.4), 0 6px 18px rgba(0,0,0,0.5)'; }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow = nodes.length > 0 ? '0 0 20px rgba(34,211,238,0.25), 0 4px 12px rgba(0,0,0,0.4)' : 'none'; }}
+              className="run-btn w-full py-2.5 rounded-xl text-white font-bold text-sm transition-all duration-200 disabled:opacity-40 flex items-center justify-center gap-2 relative overflow-hidden"
             >
               <Zap size={15} />
               Iniciar {algorithms.find((a) => a.id === algorithm)?.label}

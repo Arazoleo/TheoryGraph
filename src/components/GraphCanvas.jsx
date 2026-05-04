@@ -260,11 +260,11 @@ export default function GraphCanvas({
 
       {/* Background */}
       <rect className="bg-layer" width="100%" height="100%" />
-      <rect width="100%" height="100%" fill="url(#aurora-violet)" />
-      <rect width="100%" height="100%" fill="url(#aurora-cyan)" />
-      <rect width="100%" height="100%" fill="url(#aurora-emerald)" />
+      <rect className="canvas-aurora" width="100%" height="100%" fill="url(#aurora-violet)" />
+      <rect className="canvas-aurora" width="100%" height="100%" fill="url(#aurora-cyan)" />
+      <rect className="canvas-aurora" width="100%" height="100%" fill="url(#aurora-emerald)" />
       <rect width="100%" height="100%" fill="url(#dotgrid)" />
-      <rect width="100%" height="100%" fill="url(#vignette)" style={{ pointerEvents: 'none' }} />
+      <rect className="canvas-vignette" width="100%" height="100%" fill="url(#vignette)" style={{ pointerEvents: 'none' }} />
 
       {/* Edges */}
       {edges.map((edge) => {
