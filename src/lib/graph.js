@@ -98,6 +98,43 @@ export class Graph {
     return max;
   }
 
+  isBipartite() {
+    const color = new Map();
+    for (const nodeId of this.nodes.keys()) {
+      if (color.has(nodeId)) continue;
+      const queue = [nodeId];
+      color.set(nodeId, 0);
+      while (queue.length > 0) {
+        const u = queue.shift();
+        for (const { nodeId: v } of this.getNeighbors(u)) {
+          if (!color.has(v)) {
+            color.set(v, 1 - color.get(u));
+            queue.push(v);
+          } else if (color.get(v) === color.get(u)) {
+            return { bipartite: false, partition: null };
+          }
+        }
+      }
+    }
+    const left = new Set([...color.entries()].filter(([, c]) => c === 0).map(([id]) => id));
+    const right = new Set([...color.entries()].filter(([, c]) => c === 1).map(([id]) => id));
+    return { bipartite: true, partition: { left, right } };
+  }
+
+  isConnected() {
+    if (this.nodes.size === 0) return true;
+    const start = this.nodes.keys().next().value;
+    const visited = new Set([start]);
+    const queue = [start];
+    while (queue.length > 0) {
+      const u = queue.shift();
+      for (const { nodeId: v } of this.getNeighbors(u)) {
+        if (!visited.has(v)) { visited.add(v); queue.push(v); }
+      }
+    }
+    return visited.size === this.nodes.size;
+  }
+
   getAdjacencyMatrix() {
     const nodeIds = Array.from(this.nodes.keys()).sort((a, b) => a - b);
     const n = nodeIds.length;

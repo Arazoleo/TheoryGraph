@@ -90,6 +90,7 @@ function AlgorithmInfo({ algorithm, stepData, stepIndex, totalSteps }) {
   const complexity = COMPLEXITY[algorithm] || {};
   const pseudoLine = stepData?.pseudocodeLine ?? -1;
   const isSearch = algorithm === 'dfs' || algorithm === 'bfs';
+  const isMatching = algorithm === 'aps' || algorithm === 'egervary';
   const algoChapter =
     algorithm === 'prim'
       ? '1'
@@ -99,7 +100,11 @@ function AlgorithmInfo({ algorithm, stepData, stepIndex, totalSteps }) {
       ? '3'
       : algorithm === 'dfs'
       ? '4'
-      : '5';
+      : algorithm === 'bfs'
+      ? '5'
+      : algorithm === 'egervary'
+      ? 'Egerváry'
+      : '16.18';
 
   return (
     <>
@@ -113,7 +118,7 @@ function AlgorithmInfo({ algorithm, stepData, stepIndex, totalSteps }) {
         </div>
       </Section>
 
-      {stepData && (
+      {stepData && !isMatching && (
         <Section title={isSearch ? 'Busca' : 'AGM (Árvore Geradora Mínima)'}>
           <div className="flex gap-3">
             <StatBox
@@ -130,7 +135,20 @@ function AlgorithmInfo({ algorithm, stepData, stepIndex, totalSteps }) {
         </Section>
       )}
 
-      <Section title={`Algoritmo 7.${algoChapter}`}>
+      {stepData && isMatching && (
+        <Section title={algorithm === 'egervary' ? 'Emparelhamento M*' : 'Emparelhamento M'}>
+          <div className="flex gap-2 flex-wrap">
+            <StatBox label="|M*|" value={stepData.matchingSize ?? 0} color="text-emerald-400" />
+            <StatBox label="R(T)" value={stepData.redNodes?.size ?? 0} color="text-rose-400" />
+            <StatBox label="B(T)" value={stepData.blueNodes?.size ?? 0} color="text-violet-400" />
+            {algorithm === 'egervary' && (
+              <StatBox label="|T|" value={stepData.apsTrees?.length ?? 0} color="text-amber-400" />
+            )}
+          </div>
+        </Section>
+      )}
+
+      <Section title={isMatching ? `Algoritmo ${algoChapter}` : `Algoritmo 7.${algoChapter}`}>
         <div className="info-card p-2">
           {pseudocode.map((line, i) => (
             <div key={i} className={`pseudo-line ${i === pseudoLine ? 'active' : ''}`}>

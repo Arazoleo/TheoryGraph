@@ -32,13 +32,21 @@ export default function GraphCanvas({
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   }, []);
 
+  const isRemoved = (nodeId) => highlights.removedNodes?.has(nodeId);
+
   const getNodeFill = (nodeId) => {
+    if (isRemoved(nodeId)) return 'url(#grad-removed)';
+    if (highlights.redNodes?.has(nodeId)) return 'url(#grad-rose)';
+    if (highlights.blueNodes?.has(nodeId)) return 'url(#grad-violet)';
     if (highlights.mstNodes?.has(nodeId)) return 'url(#grad-green)';
     if (nodeId === selectedNode || nodeId === edgeStart) return 'url(#grad-cyan)';
     return 'url(#grad-default)';
   };
 
   const getNodeStroke = (nodeId) => {
+    if (isRemoved(nodeId)) return '#1e293b';
+    if (highlights.redNodes?.has(nodeId)) return '#fb7185';
+    if (highlights.blueNodes?.has(nodeId)) return '#a78bfa';
     if (highlights.mstNodes?.has(nodeId)) return '#34d399';
     if (nodeId === selectedNode || nodeId === edgeStart) return '#22d3ee';
     if (nodeId === hoveredNode) return '#94a3b8';
@@ -46,12 +54,20 @@ export default function GraphCanvas({
   };
 
   const getNodeFilter = (nodeId) => {
+    if (isRemoved(nodeId)) return '';
+    if (highlights.redNodes?.has(nodeId)) return 'url(#glow-rose)';
+    if (highlights.blueNodes?.has(nodeId)) return 'url(#glow-violet)';
     if (highlights.mstNodes?.has(nodeId)) return 'url(#glow-green)';
     if (nodeId === selectedNode || nodeId === edgeStart) return 'url(#glow-cyan)';
     return '';
   };
 
-  const getEdgeColor = (edgeId) => {
+  const isRemovedEdge = (edge) =>
+    highlights.removedNodes?.has(edge.source) || highlights.removedNodes?.has(edge.target);
+
+  const getEdgeColor = (edgeId, edge) => {
+    if (isRemovedEdge(edge)) return '#0f172a';
+    if (highlights.augmentingPath?.has(edgeId)) return '#fbbf24';
     if (highlights.rejectedEdge === edgeId) return '#f87171';
     if (highlights.currentEdge === edgeId) return '#fbbf24';
     if (highlights.mstEdges?.has(edgeId)) return '#34d399';
@@ -59,14 +75,18 @@ export default function GraphCanvas({
     return '#334155';
   };
 
-  const getEdgeWidth = (edgeId) => {
+  const getEdgeWidth = (edgeId, edge) => {
+    if (isRemovedEdge(edge)) return 0.8;
+    if (highlights.augmentingPath?.has(edgeId)) return 3.5;
     if (highlights.mstEdges?.has(edgeId)) return 3;
     if (highlights.currentEdge === edgeId) return 3;
     if (highlights.candidateEdges?.has(edgeId)) return 2;
     return 1.5;
   };
 
-  const getEdgeFilter = (edgeId) => {
+  const getEdgeFilter = (edgeId, edge) => {
+    if (isRemovedEdge(edge)) return '';
+    if (highlights.augmentingPath?.has(edgeId)) return 'url(#glow-amber)';
     if (highlights.mstEdges?.has(edgeId)) return 'url(#glow-green)';
     if (highlights.currentEdge === edgeId) return 'url(#glow-amber)';
     if (highlights.rejectedEdge === edgeId) return 'url(#glow-red)';
@@ -197,6 +217,30 @@ export default function GraphCanvas({
           <stop offset="0%" stopColor="#fde68a" />
           <stop offset="100%" stopColor="#f59e0b" />
         </radialGradient>
+        <radialGradient id="grad-rose" cx="35%" cy="30%">
+          <stop offset="0%" stopColor="#fda4af" />
+          <stop offset="100%" stopColor="#f43f5e" />
+        </radialGradient>
+        <radialGradient id="grad-violet" cx="35%" cy="30%">
+          <stop offset="0%" stopColor="#c4b5fd" />
+          <stop offset="100%" stopColor="#7c3aed" />
+        </radialGradient>
+        <filter id="glow-rose" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="5" result="b" />
+          <feFlood floodColor="#fb7185" floodOpacity="0.5" result="c" />
+          <feComposite in="c" in2="b" operator="in" result="s" />
+          <feMerge><feMergeNode in="s" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <radialGradient id="grad-removed" cx="35%" cy="30%">
+          <stop offset="0%" stopColor="#1e293b" />
+          <stop offset="100%" stopColor="#0f172a" />
+        </radialGradient>
+        <filter id="glow-violet" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="5" result="b" />
+          <feFlood floodColor="#a78bfa" floodOpacity="0.5" result="c" />
+          <feComposite in="c" in2="b" operator="in" result="s" />
+          <feMerge><feMergeNode in="s" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
         <pattern id="dotgrid" width="24" height="24" patternUnits="userSpaceOnUse">
           <circle cx="12" cy="12" r="0.6" fill="rgba(255,255,255,0.04)" />
         </pattern>
@@ -210,9 +254,9 @@ export default function GraphCanvas({
         const src = nodes.find((n) => n.id === edge.source);
         const tgt = nodes.find((n) => n.id === edge.target);
         if (!src || !tgt) return null;
-        const color = getEdgeColor(edge.id);
-        const width = getEdgeWidth(edge.id);
-        const filter = getEdgeFilter(edge.id);
+        const color = getEdgeColor(edge.id, edge);
+        const width = getEdgeWidth(edge.id, edge);
+        const filter = getEdgeFilter(edge.id, edge);
         const isCand = highlights.candidateEdges?.has(edge.id);
         const isRejected = highlights.rejectedEdge === edge.id;
         const isCurrent = highlights.currentEdge === edge.id;
@@ -285,7 +329,8 @@ export default function GraphCanvas({
         const fill = getNodeFill(node.id);
         const stroke = getNodeStroke(node.id);
         const filter = getNodeFilter(node.id);
-        const isHighlighted = highlights.mstNodes?.has(node.id) || node.id === selectedNode || node.id === edgeStart;
+        const removed = isRemoved(node.id);
+        const isHighlighted = !removed && (highlights.mstNodes?.has(node.id) || highlights.redNodes?.has(node.id) || highlights.blueNodes?.has(node.id) || node.id === selectedNode || node.id === edgeStart);
 
         return (
           <g
@@ -300,6 +345,7 @@ export default function GraphCanvas({
                 : tool === 'select'
                 ? dragging === node.id ? 'grabbing' : 'grab'
                 : 'pointer',
+              opacity: removed ? 0.2 : 1,
             }}
           >
             <circle

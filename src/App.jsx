@@ -14,6 +14,8 @@ import {
   generateBoruvkaSteps,
   generateDfsSteps,
   generateBfsSteps,
+  generateApsSteps,
+  generateEgervarySteps,
 } from './lib/algorithms';
 
 export default function App() {
@@ -34,6 +36,8 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1000);
   const [startNode, setStartNode] = useState(null);
+  const [apsInitialMatching, setApsInitialMatching] = useState('empty');
+  const [algoError, setAlgoError] = useState(null);
 
   const [weightModal, setWeightModal] = useState(null);
   const [weightInput, setWeightInput] = useState('1');
@@ -144,9 +148,26 @@ export default function App() {
 
   // ---------- Algorithms ----------
 
+  const validateAlgorithm = useCallback((g) => {
+    if (algorithm === 'aps' || algorithm === 'egervary') {
+      const { bipartite } = g.isBipartite();
+      if (!bipartite)
+        return 'O grafo não é bipartido. APS e Egerváry (sem blossoms) só garantem emparelhamento máximo em grafos bipartidos.';
+    }
+    if (algorithm === 'prim' || algorithm === 'kruskal' || algorithm === 'boruvka') {
+      if (!g.isConnected())
+        return 'O grafo não é conexo. Algoritmos de AGM operam sobre grafos conexos. Conecte todos os vértices ou remova os isolados.';
+    }
+    return null;
+  }, [algorithm]);
+
   const runAlgorithm = useCallback(() => {
     const g = buildGraph();
     if (g.nodes.size === 0) return;
+
+    const err = validateAlgorithm(g);
+    if (err) { setAlgoError(err); return; }
+    setAlgoError(null);
 
     let steps;
     const sn = startNode ?? nodes[0]?.id;
@@ -166,6 +187,12 @@ export default function App() {
       case 'bfs':
         steps = generateBfsSteps(g, sn);
         break;
+      case 'aps':
+        steps = generateApsSteps(g, apsInitialMatching);
+        break;
+      case 'egervary':
+        steps = generateEgervarySteps(g, apsInitialMatching);
+        break;
       default:
         return;
     }
@@ -173,7 +200,10 @@ export default function App() {
     setAlgoSteps(steps);
     setCurrentStep(0);
     setIsPlaying(false);
-  }, [buildGraph, algorithm, startNode, nodes]);
+  }, [buildGraph, algorithm, startNode, nodes, apsInitialMatching, validateAlgorithm]);
+
+  // Clear error when algorithm or graph structure changes
+  useEffect(() => { setAlgoError(null); }, [algorithm, nodes.length, edges.length]);
 
   useEffect(() => {
     if (!isPlaying || currentStep >= algoSteps.length - 1) {
@@ -197,6 +227,10 @@ export default function App() {
       candidateEdges: currentStepData.candidateEdges,
       currentEdge: currentStepData.currentEdge,
       rejectedEdge: currentStepData.rejectedEdge,
+      redNodes: currentStepData.redNodes,
+      blueNodes: currentStepData.blueNodes,
+      augmentingPath: currentStepData.augmentingPath,
+      removedNodes: currentStepData.removedNodes,
     };
   }, [currentStepData]);
 
@@ -310,6 +344,9 @@ export default function App() {
           onUFUnionAChange={setUfUnionA}
           onUFUnionBChange={setUfUnionB}
           onUFUnion={handleUFUnion}
+          apsInitialMatching={apsInitialMatching}
+          onApsInitialMatchingChange={setApsInitialMatching}
+          algoError={algoError}
         />
 
         <main className="flex-1 flex flex-col overflow-hidden">

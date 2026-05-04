@@ -723,6 +723,560 @@ export function generateDfsSteps(graph, startNodeId) {
   return steps;
 }
 
+export function generateApsSteps(graph, initialMatching = 'empty') {
+  const steps = [];
+  const nodes = graph.getNodeArray().sort((a, b) => a.id - b.id);
+  const edges = graph.getEdgeArray();
+  if (nodes.length === 0) return steps;
+
+  const getEdgeBetween = (u, v) =>
+    edges.find((e) => (e.source === u && e.target === v) || (e.source === v && e.target === u));
+
+  const matchingEdgeIds = new Set();
+  const matchOf = new Map();
+
+  const isCovered = (id) => matchOf.has(id);
+
+  const getMatchedPairs = () => {
+    const seen = new Set();
+    const pairs = [];
+    for (const eid of matchingEdgeIds) {
+      if (seen.has(eid)) continue;
+      seen.add(eid);
+      const e = edges.find((ed) => ed.id === eid);
+      if (e) pairs.push({ nodeA: e.source, nodeB: e.target, edgeId: eid });
+    }
+    return pairs;
+  };
+
+  const snap = () => new Set(matchingEdgeIds);
+
+  // Build greedy initial matching
+  if (initialMatching === 'greedy') {
+    for (const edge of edges) {
+      if (!matchOf.has(edge.source) && !matchOf.has(edge.target)) {
+        matchingEdgeIds.add(edge.id);
+        matchOf.set(edge.source, edge.target);
+        matchOf.set(edge.target, edge.source);
+      }
+    }
+  }
+
+  const initDesc = initialMatching === 'greedy'
+    ? `APS — Augmenting Path Search (Alg. 16.18). Matching inicial greedy: M = {${getMatchedPairs().map(p=>`(${p.nodeA},${p.nodeB})`).join(', ') || '∅'}} (|M|=${matchingEdgeIds.size}). APS aumentará M até ser máximo.`
+    : `APS — Augmenting Path Search (Bondy & Murty, Alg. 16.18). Início: M ← ∅. Buscaremos caminhos M-aumentantes a partir de cada vértice não-coberto até não existir nenhum (Teorema de Berge).`;
+
+  steps.push({
+    type: 'start',
+    description: initDesc,
+    mstEdges: new Set(),
+    candidateEdges: new Set(),
+    currentEdge: null,
+    redNodes: new Set(),
+    blueNodes: new Set(),
+    matchingSize: 0,
+    currentRoot: null,
+    pseudocodeLine: -1,
+    augmentingPath: null,
+    matchedPairs: [],
+  });
+
+  let foundAugmenting = true;
+
+  while (foundAugmenting) {
+    foundAugmenting = false;
+
+    for (const startNode of nodes) {
+      if (isCovered(startNode.id)) continue;
+      const u = startNode.id;
+
+      const VT = new Set([u]);
+      const RT = new Set([u]);
+      const BT = new Set();
+      const ET = new Set();
+      const treeParentEdge = new Map();
+      const treeParentNode = new Map();
+
+      const nonMatchTreeEdges = () => new Set([...ET].filter((eid) => !matchingEdgeIds.has(eid)));
+
+      steps.push({
+        type: 'init-aps',
+        description: `APS(G, M, ${u}): vértice ${u} não coberto por M. V(T) ← {${u}}, E(T) ← ∅, R(T) ← {${u}} (vermelho). B(T) ← ∅.`,
+        mstEdges: snap(),
+        candidateEdges: new Set(),
+        currentEdge: null,
+        redNodes: new Set(RT),
+        blueNodes: new Set(),
+        matchingSize: matchingEdgeIds.size,
+        currentRoot: u,
+        pseudocodeLine: 0,
+        augmentingPath: null,
+        matchedPairs: getMatchedPairs(),
+      });
+
+      let augmented = false;
+
+      while (!augmented) {
+        // Find next edge xy with x ∈ R(T), y ∉ V(T)
+        let found = null;
+        for (const x of [...RT].sort((a, b) => a - b)) {
+          if (found) break;
+          const nbrs = graph.getNeighbors(x).sort((a, b) => a.nodeId - b.nodeId);
+          for (const nb of nbrs) {
+            if (!VT.has(nb.nodeId)) {
+              const e = getEdgeBetween(x, nb.nodeId);
+              if (e) { found = { x, y: nb.nodeId, edge: e }; break; }
+            }
+          }
+        }
+
+        if (!found) {
+          // APS-tree: no augmenting path from u
+          steps.push({
+            type: 'aps-tree',
+            description: `Não existe aresta xy com x ∈ R(T) e y ∉ V(T). T é uma APS-tree enraizada em ${u}. R(T) = {${[...RT].sort((a,b)=>a-b).join(', ')}}, B(T) = {${[...BT].sort((a,b)=>a-b).join(', ') || '∅'}}. Nenhum caminho M-aumentante a partir de ${u}.`,
+            mstEdges: snap(),
+            candidateEdges: nonMatchTreeEdges(),
+            currentEdge: null,
+            redNodes: new Set(RT),
+            blueNodes: new Set(BT),
+            matchingSize: matchingEdgeIds.size,
+            currentRoot: u,
+            pseudocodeLine: 10,
+            augmentingPath: null,
+            matchedPairs: getMatchedPairs(),
+          });
+          break;
+        }
+
+        const { x, y, edge: xyEdge } = found;
+        VT.add(y);
+        ET.add(xyEdge.id);
+        treeParentEdge.set(y, xyEdge.id);
+        treeParentNode.set(y, x);
+
+        if (!isCovered(y)) {
+          // Reconstruct augmenting path P = uTy
+          const pathEdges = new Set([xyEdge.id]);
+          let cur = x;
+          while (cur !== u) {
+            const matchEid = treeParentEdge.get(cur);
+            pathEdges.add(matchEid);
+            const bNode = treeParentNode.get(cur);
+            const nonMatchEid = treeParentEdge.get(bNode);
+            pathEdges.add(nonMatchEid);
+            cur = treeParentNode.get(bNode);
+          }
+
+          const pathLen = pathEdges.size;
+          steps.push({
+            type: 'augment-found',
+            description: `y = ${y} não coberto por M! Caminho M-aumentante P = u(${u})Ty(${y}) encontrado com ${pathLen} aresta(s). Linha 4: M ← M Δ E(P).`,
+            mstEdges: snap(),
+            candidateEdges: nonMatchTreeEdges(),
+            currentEdge: xyEdge.id,
+            redNodes: new Set(RT),
+            blueNodes: new Set(BT),
+            matchingSize: matchingEdgeIds.size,
+            currentRoot: u,
+            pseudocodeLine: 3,
+            augmentingPath: pathEdges,
+            matchedPairs: getMatchedPairs(),
+          });
+
+          // Apply M Δ E(P)
+          for (const eid of pathEdges) {
+            const e = edges.find((ed) => ed.id === eid);
+            if (!e) continue;
+            if (matchingEdgeIds.has(eid)) {
+              matchingEdgeIds.delete(eid);
+              matchOf.delete(e.source);
+              matchOf.delete(e.target);
+            } else {
+              matchingEdgeIds.add(eid);
+              matchOf.set(e.source, e.target);
+              matchOf.set(e.target, e.source);
+            }
+          }
+
+          steps.push({
+            type: 'augment-apply',
+            description: `M ← M Δ E(P) aplicado. |M| = ${matchingEdgeIds.size}. Vértices ${u} e ${y} agora cobertos. Reinicia APS do início.`,
+            mstEdges: snap(),
+            candidateEdges: new Set(),
+            currentEdge: null,
+            redNodes: new Set(),
+            blueNodes: new Set(),
+            matchingSize: matchingEdgeIds.size,
+            currentRoot: u,
+            pseudocodeLine: 4,
+            augmentingPath: pathEdges,
+            matchedPairs: getMatchedPairs(),
+          });
+
+          augmented = true;
+          foundAugmenting = true;
+        } else {
+          // y is covered: grow T with y (blue) and z=match(y) (red)
+          const z = matchOf.get(y);
+          const yzEdge = getEdgeBetween(y, z);
+          BT.add(y);
+          VT.add(z);
+          ET.add(yzEdge.id);
+          RT.add(z);
+          treeParentEdge.set(z, yzEdge.id);
+          treeParentNode.set(z, y);
+
+          steps.push({
+            type: 'grow-tree',
+            description: `Aresta (${x}, ${y}) adicionada: y = ${y} coberto por M, com parceiro z = ${z} (aresta ${y}-${z} ∈ M). Adiciona ${y} → B(T) (azul) e ${z} → R(T) (vermelho). Árvore M-coberta cresce.`,
+            mstEdges: snap(),
+            candidateEdges: nonMatchTreeEdges(),
+            currentEdge: xyEdge.id,
+            redNodes: new Set(RT),
+            blueNodes: new Set(BT),
+            matchingSize: matchingEdgeIds.size,
+            currentRoot: u,
+            pseudocodeLine: 7,
+            augmentingPath: null,
+            matchedPairs: getMatchedPairs(),
+          });
+        }
+      }
+
+      if (augmented) break;
+    }
+  }
+
+  steps.push({
+    type: 'complete',
+    description: `APS concluído. Emparelhamento máximo M com ${matchingEdgeIds.size} aresta(s). Pelo Teorema de Berge (16.3): não existe caminho M-aumentante, logo M é máximo.`,
+    mstEdges: snap(),
+    candidateEdges: new Set(),
+    currentEdge: null,
+    redNodes: new Set(),
+    blueNodes: new Set(),
+    matchingSize: matchingEdgeIds.size,
+    currentRoot: null,
+    pseudocodeLine: 11,
+    augmentingPath: null,
+    matchedPairs: getMatchedPairs(),
+  });
+
+  return steps;
+}
+
+export function generateEgervarySteps(graph, initialMatching = 'empty') {
+  const steps = [];
+  const nodes = graph.getNodeArray().sort((a, b) => a.id - b.id);
+  const edges = graph.getEdgeArray();
+  if (nodes.length === 0) return steps;
+
+  const getEdgeBetween = (u, v) =>
+    edges.find((e) => (e.source === u && e.target === v) || (e.source === v && e.target === u));
+
+  // M': active matching in G'
+  const matchingEdgeIds = new Set();
+  const matchOf = new Map();
+  // M(T) committed from completed APS-trees
+  const committedEdgeIds = new Set();
+  // Nodes removed from G'
+  const removedNodes = new Set();
+  // Completed APS-trees
+  const apsTrees = [];
+
+  const isCovered = (id) => matchOf.has(id);
+  const isActive = (id) => !removedNodes.has(id);
+  const snap = () => new Set([...matchingEdgeIds, ...committedEdgeIds]);
+
+  const getMatchedPairs = (edgeSet) => {
+    const seen = new Set();
+    const pairs = [];
+    for (const eid of edgeSet) {
+      if (seen.has(eid)) continue;
+      seen.add(eid);
+      const e = edges.find((ed) => ed.id === eid);
+      if (e) pairs.push({ nodeA: e.source, nodeB: e.target, edgeId: eid });
+    }
+    return pairs;
+  };
+
+  const getAllRed = () => new Set(apsTrees.flatMap((t) => [...t.RT]));
+  const getAllBlue = () => new Set(apsTrees.flatMap((t) => [...t.BT]));
+  const getTreesSnapshot = () => apsTrees.map((t) => ({ ...t }));
+
+  // Build initial matching
+  if (initialMatching === 'greedy') {
+    for (const edge of edges) {
+      if (!matchOf.has(edge.source) && !matchOf.has(edge.target)) {
+        matchingEdgeIds.add(edge.id);
+        matchOf.set(edge.source, edge.target);
+        matchOf.set(edge.target, edge.source);
+      }
+    }
+  }
+
+  const initDesc = initialMatching === 'greedy'
+    ? `Egerváry: G' ← G, M ← greedy |M|=${matchingEdgeIds.size}, T ← ∅. APS com redução de subgrafo.`
+    : `Egerváry (Bondy & Murty, Alg. 16.18): G' ← G, M ← ∅, T ← ∅. A cada APS-tree: comita M(T) e remove V(T) de G'.`;
+
+  steps.push({
+    type: 'start',
+    description: initDesc,
+    mstEdges: snap(),
+    candidateEdges: new Set(),
+    currentEdge: null,
+    redNodes: new Set(),
+    blueNodes: new Set(),
+    removedNodes: new Set(),
+    augmentingPath: null,
+    matchingSize: matchingEdgeIds.size + committedEdgeIds.size,
+    currentRoot: null,
+    pseudocodeLine: 0,
+    apsTrees: getTreesSnapshot(),
+    matchedPairs: getMatchedPairs(snap()),
+  });
+
+  // Main loop: while G' has uncovered vertex
+  while (true) {
+    const uNode = nodes.find((n) => isActive(n.id) && !isCovered(n.id));
+    if (!uNode) break;
+    const u = uNode.id;
+
+    // APS(G', M, u) — restricted to active subgraph
+    const VT = new Set([u]);
+    const RT = new Set([u]);
+    const BT = new Set();
+    const ET = new Set();
+    const treeParentEdge = new Map();
+    const treeParentNode = new Map();
+
+    const nonMatchTreeEdges = () => new Set([...ET].filter((eid) => !matchingEdgeIds.has(eid)));
+
+    steps.push({
+      type: 'init-aps',
+      description: `G' tem ${nodes.filter((n) => isActive(n.id)).length} vértices ativos. APS(G', M, ${u}): u=${u} não coberto. V(T)←{${u}}, R(T)←{${u}}.`,
+      mstEdges: snap(),
+      candidateEdges: new Set(),
+      currentEdge: null,
+      redNodes: new Set(RT),
+      blueNodes: new Set(BT),
+      removedNodes: new Set(removedNodes),
+      augmentingPath: null,
+      matchingSize: matchingEdgeIds.size + committedEdgeIds.size,
+      currentRoot: u,
+      pseudocodeLine: 3,
+      apsTrees: getTreesSnapshot(),
+      matchedPairs: getMatchedPairs(snap()),
+    });
+
+    let augmented = false;
+
+    while (true) {
+      // Find edge xy: x ∈ R(T), y ∉ V(T), y ∈ G'
+      let found = null;
+      for (const x of [...RT].sort((a, b) => a - b)) {
+        if (found) break;
+        const nbrs = graph.getNeighbors(x)
+          .filter((nb) => !removedNodes.has(nb.nodeId))
+          .sort((a, b) => a.nodeId - b.nodeId);
+        for (const nb of nbrs) {
+          if (!VT.has(nb.nodeId)) {
+            const e = getEdgeBetween(x, nb.nodeId);
+            if (e) { found = { x, y: nb.nodeId, edge: e }; break; }
+          }
+        }
+      }
+
+      if (!found) {
+        // APS-tree T found
+        const MT = new Set([...ET].filter((eid) => matchingEdgeIds.has(eid)));
+        const rList = [...RT].sort((a, b) => a - b);
+        const bList = [...BT].sort((a, b) => a - b);
+        const mtDesc = [...MT].map((eid) => { const e = edges.find((ed) => ed.id === eid); return e ? `(${e.source},${e.target})` : ''; }).join(', ') || '∅';
+
+        apsTrees.push({ root: u, RT: new Set(RT), BT: new Set(BT), VT: new Set(VT), MT: new Set(MT) });
+
+        steps.push({
+          type: 'aps-tree-commit',
+          description: `APS-tree T enraizada em u=${u}: R(T)={${rList.join(',')}}, B(T)={${bList.join(',') || '∅'}}. Commit M(T)={${mtDesc}}. G' ← G'−V(T).`,
+          mstEdges: snap(),
+          candidateEdges: nonMatchTreeEdges(),
+          currentEdge: null,
+          redNodes: new Set(RT),
+          blueNodes: new Set(BT),
+          removedNodes: new Set(removedNodes),
+          augmentingPath: null,
+          matchingSize: matchingEdgeIds.size + committedEdgeIds.size,
+          currentRoot: u,
+          pseudocodeLine: 7,
+          apsTrees: getTreesSnapshot(),
+          matchedPairs: getMatchedPairs(snap()),
+        });
+
+        // M ← M \ E(T): move M(T) to committed, remove from active matching
+        for (const eid of MT) {
+          matchingEdgeIds.delete(eid);
+          committedEdgeIds.add(eid);
+        }
+        // Remove V(T) from G'
+        for (const nodeId of VT) {
+          removedNodes.add(nodeId);
+          matchOf.delete(nodeId);
+        }
+
+        steps.push({
+          type: 'subgraph-reduced',
+          description: `M ← M\\E(T). G' reduzido: ${[...VT].sort((a,b)=>a-b).join(',')} removidos. |G'| = ${nodes.filter((n) => isActive(n.id)).length} vértice(s). |M*| = ${matchingEdgeIds.size + committedEdgeIds.size}.`,
+          mstEdges: snap(),
+          candidateEdges: new Set(),
+          currentEdge: null,
+          redNodes: new Set(),
+          blueNodes: new Set(),
+          removedNodes: new Set(removedNodes),
+          augmentingPath: null,
+          matchingSize: matchingEdgeIds.size + committedEdgeIds.size,
+          currentRoot: null,
+          pseudocodeLine: 9,
+          apsTrees: getTreesSnapshot(),
+          matchedPairs: getMatchedPairs(snap()),
+        });
+
+        break;
+      }
+
+      const { x, y, edge: xyEdge } = found;
+      VT.add(y);
+      ET.add(xyEdge.id);
+      treeParentEdge.set(y, xyEdge.id);
+      treeParentNode.set(y, x);
+
+      if (!isCovered(y)) {
+        // Augmenting path found
+        const pathEdges = new Set([xyEdge.id]);
+        let cur = x;
+        while (cur !== u) {
+          const matchEid = treeParentEdge.get(cur);
+          pathEdges.add(matchEid);
+          const bNode = treeParentNode.get(cur);
+          const nonMatchEid = treeParentEdge.get(bNode);
+          pathEdges.add(nonMatchEid);
+          cur = treeParentNode.get(bNode);
+        }
+
+        steps.push({
+          type: 'augment-found',
+          description: `y=${y} não coberto! Caminho M-aumentante P = u(${u})Ty(${y}), ${pathEdges.size} aresta(s). M ← M Δ E(P).`,
+          mstEdges: snap(),
+          candidateEdges: nonMatchTreeEdges(),
+          currentEdge: xyEdge.id,
+          redNodes: new Set(RT),
+          blueNodes: new Set(BT),
+          removedNodes: new Set(removedNodes),
+          augmentingPath: pathEdges,
+          matchingSize: matchingEdgeIds.size + committedEdgeIds.size,
+          currentRoot: u,
+          pseudocodeLine: 4,
+          apsTrees: getTreesSnapshot(),
+          matchedPairs: getMatchedPairs(snap()),
+        });
+
+        // Apply M Δ E(P)
+        for (const eid of pathEdges) {
+          const e = edges.find((ed) => ed.id === eid);
+          if (!e) continue;
+          if (matchingEdgeIds.has(eid)) {
+            matchingEdgeIds.delete(eid);
+            matchOf.delete(e.source);
+            matchOf.delete(e.target);
+          } else {
+            matchingEdgeIds.add(eid);
+            matchOf.set(e.source, e.target);
+            matchOf.set(e.target, e.source);
+          }
+        }
+
+        steps.push({
+          type: 'augment-apply',
+          description: `M ← M Δ E(P). |M*| = ${matchingEdgeIds.size + committedEdgeIds.size}. APS reinicia em G'.`,
+          mstEdges: snap(),
+          candidateEdges: new Set(),
+          currentEdge: null,
+          redNodes: new Set(),
+          blueNodes: new Set(),
+          removedNodes: new Set(removedNodes),
+          augmentingPath: pathEdges,
+          matchingSize: matchingEdgeIds.size + committedEdgeIds.size,
+          currentRoot: u,
+          pseudocodeLine: 5,
+          apsTrees: getTreesSnapshot(),
+          matchedPairs: getMatchedPairs(snap()),
+        });
+
+        augmented = true;
+        break;
+      } else {
+        // y covered: grow tree
+        const z = matchOf.get(y);
+        const yzEdge = getEdgeBetween(y, z);
+        BT.add(y);
+        VT.add(z);
+        ET.add(yzEdge.id);
+        RT.add(z);
+        treeParentEdge.set(z, yzEdge.id);
+        treeParentNode.set(z, y);
+
+        steps.push({
+          type: 'grow-tree',
+          description: `Aresta (${x},${y}): y=${y} coberto, parceiro z=${z}. ${y}→B(T) (azul), ${z}→R(T) (vermelho).`,
+          mstEdges: snap(),
+          candidateEdges: nonMatchTreeEdges(),
+          currentEdge: xyEdge.id,
+          redNodes: new Set(RT),
+          blueNodes: new Set(BT),
+          removedNodes: new Set(removedNodes),
+          augmentingPath: null,
+          matchingSize: matchingEdgeIds.size + committedEdgeIds.size,
+          currentRoot: u,
+          pseudocodeLine: 3,
+          apsTrees: getTreesSnapshot(),
+          matchedPairs: getMatchedPairs(snap()),
+        });
+      }
+    }
+    // Loop continues: augmented → APS restarts; APS-tree → reduced G', APS restarts
+  }
+
+  // G' has no uncovered vertex → M(G') = matchingEdgeIds (perfect matching of F)
+  const vF = nodes.filter((n) => !removedNodes.has(n.id)).map((n) => n.id);
+  const mFsize = matchingEdgeIds.size;
+  for (const eid of matchingEdgeIds) committedEdgeIds.add(eid);
+  matchingEdgeIds.clear();
+
+  const allRed = getAllRed();
+  const allBlue = getAllBlue();
+  const allRoots = apsTrees.map((t) => t.root);
+
+  steps.push({
+    type: 'complete',
+    description: `Egerváry concluído! F = G'−(R∪B) com V(F)={${vF.join(',') || '∅'}}, M(F) perfeito (${mFsize} aresta(s)). M* = ⋃M(T)∪M(F), |M*|=${committedEdgeIds.size}. T=${apsTrees.length} árvore(s), U={${allRoots.join(',') || '∅'}}.`,
+    mstEdges: new Set(committedEdgeIds),
+    candidateEdges: new Set(),
+    currentEdge: null,
+    redNodes: new Set(),
+    blueNodes: new Set(),
+    removedNodes: new Set(removedNodes),
+    augmentingPath: null,
+    matchingSize: committedEdgeIds.size,
+    currentRoot: null,
+    pseudocodeLine: 12,
+    apsTrees: getTreesSnapshot(),
+    matchedPairs: getMatchedPairs(new Set(committedEdgeIds)),
+  });
+
+  return steps;
+}
+
 export const PSEUDOCODE = {
   prim: [
     ' 2  H ← ∅;',
@@ -790,6 +1344,37 @@ export const PSEUDOCODE = {
     ' 7  fim-enquanto',
     ' 8  fim.',
   ],
+  egervary: [
+    ' 1  G\'←G, M←M₀, T←∅',
+    ' 2  enquanto G\' tem vértice não coberto faça',
+    ' 3    u ← vértice não coberto em G\'',
+    ' 4    APS(G\', M, u) →',
+    ' 5    se caminho aumentante P então',
+    ' 6      M ← M Δ E(P)',
+    ' 7    senão  {T é APS-tree}',
+    ' 8      T ← T ∪ {T};  M(T)←M∩E(T)',
+    ' 9      M ← M \\ E(T)',
+    '10      G\' ← G\' − V(T)',
+    '11    fim se',
+    '12  fim enquanto',
+    '13  M* ← ⋃{M(T):T∈T} ∪ M(G\')',
+    '14  retorna M*, T, R, B, F, U',
+  ],
+  aps: [
+    ' 1  V(T)←{u}, E(T)←∅, R(T)←{u}',
+    ' 2  enquanto ∃ aresta xy: x∈R(T), y∉V(T) faça',
+    ' 3    V(T)←V(T)∪{y},  E(T)←E(T)∪{xy}',
+    ' 4    se y não coberto por M então',
+    ' 5      M ← M Δ E(P),  P := uTy',
+    ' 6      retorna M',
+    ' 7    senão',
+    ' 8      V(T)∪{z}, E(T)∪{yz},',
+    '        R(T)∪{z}  (yz ∈ M)',
+    ' 9    fim se',
+    '10  fim enquanto',
+    '11  T←(V(T),E(T)); B(T)←V(T)∖R(T)',
+    '12  retorna (T, u, R(T), B(T), M(T))',
+  ],
 };
 
 export const COMPLEXITY = {
@@ -841,5 +1426,17 @@ export const COMPLEXITY = {
     space: 'O(V)',
     detail:
       'Cada vértice entra e sai da fila no máximo uma vez. A varredura total das listas de adjacência custa O(A), resultando em O(V + A).',
+  },
+  egervary: {
+    time: 'O(V · A)',
+    space: 'O(V + A)',
+    detail:
+      'Cada APS roda em O(V + A). O número de aumentos é ≤ ⌊V/2⌋ e o número de APS-trees também é ≤ ⌊V/2⌋. Cada APS-tree remove ≥ 1 vértice de G\'. Total: O(V) chamadas APS × O(A) = O(V·A). Produz também uma cobertura mínima K* do mesmo tamanho de M* (Teorema König-Egerváry).',
+  },
+  aps: {
+    time: 'O(V · (V + A))',
+    space: 'O(V + A)',
+    detail:
+      'Cada chamada APS(G, M, u) percorre no máximo V vértices e A arestas: O(V + A). O número de aumentos é no máximo ⌊V/2⌋ (cada aumento cobre 2 vértices). Após cada aumento reiniciamos a varredura: O(V) chamadas × O(V + A) = O(V·(V + A)). Para grafos bipartidos, Hopcroft–Karp reduz para O(√V · A) usando BFS em fases.',
   },
 };

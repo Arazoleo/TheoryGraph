@@ -23,6 +23,8 @@ const algorithms = [
   { id: 'boruvka', label: 'Borůvka' },
   { id: 'dfs', label: 'Busca Profundidade (DFS)' },
   { id: 'bfs', label: 'Busca Largura (BFS)' },
+  { id: 'aps', label: 'APS (Emparelhamento)' },
+  { id: 'egervary', label: 'Egerváry' },
 ];
 
 const reprFormats = [
@@ -68,6 +70,9 @@ export default function Sidebar({
   onUFUnionAChange,
   onUFUnionBChange,
   onUFUnion,
+  apsInitialMatching,
+  onApsInitialMatchingChange,
+  algoError,
 }) {
   return (
     <aside className="w-64 bg-slate-900/40 border-r border-white/5 flex flex-col overflow-y-auto shrink-0">
@@ -169,6 +174,45 @@ export default function Sidebar({
               />
               <span className="text-xs text-slate-500 font-mono">{(speed / 1000).toFixed(1)}s por passo</span>
             </Section>
+
+            {(algorithm === 'aps' || algorithm === 'egervary') && (
+              <Section title="Matching Inicial">
+                <div className="flex flex-col gap-1.5">
+                  {[
+                    { id: 'empty', label: 'Vazio (M ← ∅)', desc: 'Começa sem nenhum emparelhamento' },
+                    { id: 'greedy', label: 'Greedy', desc: 'Pré-emparelha aresta a aresta guloso' },
+                  ].map((opt) => (
+                    <label
+                      key={opt.id}
+                      className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition ${
+                        apsInitialMatching === opt.id
+                          ? 'border-cyan-500/40 bg-cyan-500/8 text-slate-200'
+                          : 'border-white/5 text-slate-400 hover:border-white/10'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="apsInitial"
+                        value={opt.id}
+                        checked={apsInitialMatching === opt.id}
+                        onChange={() => onApsInitialMatchingChange(opt.id)}
+                        className="accent-cyan-400 mt-0.5 shrink-0"
+                      />
+                      <div>
+                        <div className="text-xs font-medium">{opt.label}</div>
+                        <div className="text-[0.6rem] text-slate-500 mt-0.5">{opt.desc}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </Section>
+            )}
+
+            {algoError && (
+              <div className="rounded-xl border border-rose-500/30 bg-rose-500/8 px-3 py-2.5 text-xs text-rose-300 leading-relaxed">
+                {algoError}
+              </div>
+            )}
 
             <button
               onClick={onRunAlgorithm}
