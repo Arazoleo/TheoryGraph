@@ -141,29 +141,46 @@ export default function Sidebar({
 
             {nodes.length > 0 && (
               <Section title="Grafo Atual">
-                <div className="flex flex-wrap gap-1 mb-2.5">
-                  {nodes.slice(0, 18).map((n) => (
+                {/* Node dots with rainbow colors */}
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {nodes.slice(0, 16).map((n, i) => {
+                    const palette = ['#22d3ee','#818cf8','#a78bfa','#f472b6','#34d399','#fbbf24','#fb7185','#60a5fa'];
+                    const c = palette[i % palette.length];
+                    return (
+                      <div
+                        key={n.id}
+                        className="w-5 h-5 rounded-full flex items-center justify-center text-white font-black shrink-0"
+                        style={{ fontSize: '6.5px', background: `radial-gradient(circle at 35% 30%, ${c}cc, ${c}66)`, boxShadow: `0 0 6px ${c}55` }}
+                      >
+                        {n.label}
+                      </div>
+                    );
+                  })}
+                  {nodes.length > 16 && (
                     <div
-                      key={n.id}
-                      className="w-5 h-5 rounded-full flex items-center justify-center text-white font-bold shrink-0"
-                      style={{ fontSize: '7px', background: 'linear-gradient(135deg, #94a3b8, #475569)' }}
+                      className="w-5 h-5 rounded-full flex items-center justify-center font-bold shrink-0"
+                      style={{ background: 'var(--surface-hover)', color: 'var(--text-muted)', fontSize: '6px', border: '1px solid var(--border-color)' }}
                     >
-                      {n.label}
-                    </div>
-                  ))}
-                  {nodes.length > 18 && (
-                    <div
-                      className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                      style={{ background: 'var(--surface)', color: 'var(--text-muted)', fontSize: '7px' }}
-                    >
-                      +{nodes.length - 18}
+                      +{nodes.length - 16}
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  <span>{nodes.length} vértice{nodes.length !== 1 ? 's' : ''}</span>
-                  <span style={{ color: 'var(--border-color)' }}>·</span>
-                  <span>{edges.length} aresta{edges.length !== 1 ? 's' : ''}</span>
+                {/* Density bars */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[0.6rem] w-16 shrink-0" style={{ color: 'var(--text-muted)' }}>Vértices</span>
+                    <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'var(--surface)' }}>
+                      <div className="h-full rounded-full" style={{ width: `${Math.min(nodes.length / 20 * 100, 100)}%`, background: 'linear-gradient(90deg, #0891b2, #22d3ee)', transition: 'width 0.4s' }} />
+                    </div>
+                    <span className="text-[0.6rem] font-mono tabular-nums w-4 text-right" style={{ color: 'var(--text-secondary)' }}>{nodes.length}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[0.6rem] w-16 shrink-0" style={{ color: 'var(--text-muted)' }}>Arestas</span>
+                    <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: 'var(--surface)' }}>
+                      <div className="h-full rounded-full" style={{ width: `${Math.min(edges.length / 40 * 100, 100)}%`, background: 'linear-gradient(90deg, #7c3aed, #a78bfa)', transition: 'width 0.4s' }} />
+                    </div>
+                    <span className="text-[0.6rem] font-mono tabular-nums w-4 text-right" style={{ color: 'var(--text-secondary)' }}>{edges.length}</span>
+                  </div>
                 </div>
               </Section>
             )}

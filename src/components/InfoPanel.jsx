@@ -113,12 +113,26 @@ function AlgorithmInfo({ algorithm, stepData, stepIndex, totalSteps }) {
   return (
     <>
       <Section title="Passo Atual">
-        <div className="info-card animate-fade-in" key={stepIndex}>
-          {stepData ? (
-            <p className="text-sm text-slate-200 leading-relaxed">{stepData.description}</p>
-          ) : (
-            <p className="text-sm text-slate-500">Clique em "Iniciar" para executar o algoritmo.</p>
-          )}
+        <div
+          key={stepIndex}
+          className="rounded-xl p-[1px] animate-float-up"
+          style={{
+            background: stepData
+              ? 'linear-gradient(135deg, rgba(34,211,238,0.25) 0%, rgba(139,92,246,0.15) 100%)'
+              : 'var(--border-color)',
+          }}
+        >
+          <div className="rounded-xl p-3.5" style={{ background: 'var(--panel-bg)' }}>
+            {stepData ? (
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+                {stepData.description}
+              </p>
+            ) : (
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                Clique em "Iniciar" para executar o algoritmo.
+              </p>
+            )}
+          </div>
         </div>
       </Section>
 
